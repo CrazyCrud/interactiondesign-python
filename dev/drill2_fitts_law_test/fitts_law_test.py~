@@ -6,12 +6,8 @@ from PyQt4 import QtGui, QtCore
 
 class ClickRecorder(QtGui.QWidget):
 
-
-    def parseDescription():
-        with open('/home/michl/Desktop/sf_SharedLinuxFolder/Git/interactiondesign-python/data/test_description.txt') as f:
-            content = f.readlines()
-	#circleWidths = content.
-        
+    with open('/home/michl/Desktop/sf_SharedLinuxFolder/Git/interactiondesign-python/data/test_description.txt') as f:
+        content = f.readlines()
 
     print content
 
