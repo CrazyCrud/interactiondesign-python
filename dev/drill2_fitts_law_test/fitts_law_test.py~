@@ -6,17 +6,34 @@ from PyQt4 import QtGui, QtCore
 
 class ClickRecorder(QtGui.QWidget):
 
-    with open('/home/michl/Desktop/sf_SharedLinuxFolder/Git/interactiondesign-python/data/test_description.txt') as f:
-        content = f.readlines()
 
-    print content
+    def parseDescription(self):
+
+        #read input
+	with open(self.fileName) as f:
+        #with open(self.fileName) as f:
+            self.content = f.readlines()
+
+        if not content:
+            print 'File is empty'
+        
+        #self.userData = 
+	#circleWidths = content.
+        
+        print self.content
 
     def __init__(self):
         super(ClickRecorder, self).__init__()
         self.counter = 0
         self.initUI()
+        self.requestFileName()
+        self.parseDescription()
+
+    def requestFileName(self):
+        #self.fileName = raw_input("Please enter the file name including path containing descriptions for this test.")
+        self.fileName = "/home/michl/Desktop/sf_SharedLinuxFolder/Git/interactiondesign-python/data/test_description.txt"
         
-    def initUI(self):      
+    def initUI(self):
         self.text = "Circle click test"
         self.setGeometry(300, 300, 280, 170)
         self.setWindowTitle('ClickRecorder')
