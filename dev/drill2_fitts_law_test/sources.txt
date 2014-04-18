@@ -1,5 +1,0 @@
-
-Read file:
-https://stackoverflow.com/questions/3277503/python-read-file-line-by-line-into-array
-
-
