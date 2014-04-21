@@ -3,6 +3,7 @@
 
 import sys
 import csv
+import datetime
 from circle import Circle
 from PyQt4 import QtGui, QtCore
 
@@ -121,9 +122,9 @@ class ClickRecorder(QtGui.QWidget):
 
 
 	def setupLoggin(self):
-		self.logfile = open("user1.csv")
-		output = csv.DictWriter(self.logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements"])
-		output.writeHeader()
+		with open("user1.csv") as logfile:
+			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
+			output.writeHeader()
 
 
 	def setupCircles(self):
@@ -149,7 +150,19 @@ class ClickRecorder(QtGui.QWidget):
 
 
 	def logResults(self):
-		pass
+		with open("user1.csv", "a") as logfile:
+			timestamp = datetime.datetime.now().strftime("%I:%M%p")
+			data = {"UserID": 1, "Width": 1, "Distance": 1, "Timestamp": timestamp, "Movements": self.movements, "Errors": self.errors}
+			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
+			output.writerow(data)
+
+
+	def closeEvent(self, event):
+		if self.canExit():
+			self.logfile.close()
+			event.accept()
+		else:
+			event.ignore()
 
 
 def main():
