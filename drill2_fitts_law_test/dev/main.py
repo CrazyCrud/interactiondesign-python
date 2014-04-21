@@ -4,6 +4,7 @@
 import sys
 import csv
 import datetime
+import random
 from circle import Circle
 from PyQt4 import QtGui, QtCore
 
@@ -13,7 +14,8 @@ class ClickRecorder(QtGui.QWidget):
 
 	def requestFileName(self):
 		if len(sys.argv) < 2:
-			exit(0)
+			#exit(0)
+			self.fileName = "user1.txt"
 		else:
 			self.fileName = sys.argv[1]
 
@@ -28,40 +30,26 @@ class ClickRecorder(QtGui.QWidget):
 		if not content:
 			print 'File is empty'
 			exit(0)
-		#split array of form
-		#USER:1
-		#WIDTHS:10,20,30,40
-		#DISTANCES:100,200,300,400
-		#USER:2...
-		#to structure
-		#{1 : { widths : [10,20,30,40] }, { distances: [100,200..] } }
 
-		#split content into array with infos of the user
-		usersData = content.split('(User)')
 
-		self.setupData = {}
+		userLines = content.split()
 
-		for userData in usersData:
-			userLines = userData.split()
-			userId = userLines[0].split(':')[1]
-			widths = map(int, userLines[1].split(':')[1].split(','))
-			distances = map(int, userLines[2].split(':')[1].split(','))
+		#split description and comma-separated values, take values and convert to int
+		self.userId 	= userLines[0].split(':')[1]
+		self.widths 	= map(int, userLines[1].split(':')[1].split(','))
+		self.distances 	= map(int, userLines[2].split(':')[1].split(','))
 
-			self.setupData.update(
-			{   userId :
-				{
-					"widths" : widths,
-					"distances" : distances
-				}
-			})
-		print "setup data: " % self.setupData
+		#randomize width and distance arrays order 
+		random.shuffle(self.widths)
+		random.shuffle(self.distances)
 
 
 	def __init__(self):
 		super(ClickRecorder, self).__init__()
 		self.requestFileName()
-		#self.readTestSetup()
+		self.readTestSetup()
 		self.initUI()
+		self.initUser()
 		self.setupCircles()
 		self.setupTimer()
 		self.setupLogging()
@@ -70,6 +58,7 @@ class ClickRecorder(QtGui.QWidget):
 
 	def setupLogging(self):
 		with open("user1.csv", "a+") as logfile:
+			#!! delete or make array global?
 			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
 			output.writeheader()
 
@@ -77,11 +66,22 @@ class ClickRecorder(QtGui.QWidget):
 	def setupCircles(self):
 		self.circles = []
 		self.currentCircle = None
-		self.circles.append(Circle(20, 50, 150))
-		self.circles.append(Circle(20, 450, 150))
+
+		#height is constant for all tests
+		constHeight = 150
+
+		#get circle values for this trial. start at index 0
+		width 		= self.widths[self.trialsCount]
+		distance 	= self.distances[self.trialsCount]
+
+		marginleft = width
+
+		#create circle and add to current two-element circle array
+		self.circles.append(Circle(width, marginleft, constHeight))
+		self.circles.append(Circle(width, marginleft + distance, constHeight))
 
 
-	def setupTimer(self):
+	def setupTimer(self): 
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.timeUp)
 
@@ -89,10 +89,13 @@ class ClickRecorder(QtGui.QWidget):
 	def setupTrial(self):
 		self.movements = 0
 		self.errors = 0
+		self.trialsCount += 1
 
+	def initUser(self):
+		self.trialsCount = 0
 
 	def initUI(self):
-		self.setGeometry(0, 0, 500, 300)
+		self.setGeometry(0, 0, 1100, 300)
 		self.setWindowTitle("A Study about Fitts's Law")
 		self.setFocusPolicy(QtCore.Qt.StrongFocus)
 		self.center()
@@ -160,7 +163,14 @@ class ClickRecorder(QtGui.QWidget):
 	def logResults(self):
 		with open("user1.csv", "a") as logfile:
 			timestamp = datetime.datetime.now().strftime("%I:%M%p")
-			data = {"UserID": 1, "Width": 1, "Distance": 1, "Timestamp": timestamp, "Movements": self.movements, "Errors": self.errors}
+			data = {
+				"UserID": self.userId, 
+				"Width": self.widths[self.trialsCount], 
+				"Distance": self.distances[self.trialsCount], 
+				"Timestamp": timestamp, 
+				"Movements": self.movements, 
+				"Errors": self.errors
+			}
 			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
 			output.writerow(data)
 

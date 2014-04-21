@@ -4,3 +4,7 @@ https://stackoverflow.com/questions/3277503/python-read-file-line-by-line-into-a
 
 Map string array to int array:
 https://stackoverflow.com/questions/6378889/how-to-convert-a-string-list-into-an-integer-in-python
+
+Shuffle array:
+https://stackoverflow.com/questions/473973/shuffle-an-array-with-python
+
