@@ -68,6 +68,24 @@ class ClickRecorder(QtGui.QWidget):
 		self.setupTrial()
 
 
+	def setupLogging(self):
+		with open("user1.csv", "a+") as logfile:
+			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
+			output.writeheader()
+
+
+	def setupCircles(self):
+		self.circles = []
+		self.currentCircle = None
+		self.circles.append(Circle(20, 50, 150))
+		self.circles.append(Circle(20, 450, 150))
+
+
+	def setupTimer(self):
+		self.timer = QtCore.QTimer()
+		self.timer.timeout.connect(self.timeUp)
+
+
 	def setupTrial(self):
 		self.movements = 0
 		self.errors = 0
@@ -122,24 +140,6 @@ class ClickRecorder(QtGui.QWidget):
 			self.currentCircle = None
 
 
-	def setupLogging(self):
-		with open("user1.csv") as logfile:
-			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
-			output.writeHeader()
-
-
-	def setupCircles(self):
-		self.circles = []
-		self.currentCircle = None
-		self.circles.append(Circle(20, 50, 150))
-		self.circles.append(Circle(20, 450, 150))
-
-
-	def setupTimer(self):
-		self.timer = QtCore.QtTimer()
-		self.timer.timeout.connect(self.timeUp)
-
-
 	def drawCircles(self, event, qp):
 		for circle in self.circles:
 			circle.drawCircle(event, qp)
@@ -166,16 +166,12 @@ class ClickRecorder(QtGui.QWidget):
 
 
 	def closeEvent(self, event):
-		if self.canExit():
-			self.logfile.close()
-			event.accept()
-		else:
-			event.ignore()
+		event.accept()
 
 
 def main():
 	app = QtGui.QApplication(sys.argv)
-	ClickRecorder()
+	click = ClickRecorder()
 	sys.exit(app.exec_())
 
 
