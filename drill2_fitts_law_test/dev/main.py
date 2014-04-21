@@ -61,6 +61,7 @@ class ClickRecorder(QtGui.QWidget):
 		#self.readTestSetup()
 		self.initUI()
 		self.setupCircles()
+		self.setupTimer()
 
 
 	def initUI(self):
@@ -89,18 +90,42 @@ class ClickRecorder(QtGui.QWidget):
 
 	def mousePressEvent(self, event):
 		if event.button() == QtCore.Qt.LeftButton:
-			print "Left mouse button was clicked..."
+			if self.timer.isActive == False:
+				self.timer.start(1000 * 60)
+			else:
+				for circle in self.circles:
+					if circle.isClicked(event.pos()) == True:
+						if self.currentCircle == None:
+							self.currentCircle = circle
+							return
+						elif circle != self.currentCircle:
+							self.currentCircle = circle
+							print "Count correct movement..."
+						else:
+							return
 
+				self.currentCircle = None
 
 	def setupCircles(self):
 		self.circles = []
+		self.currentCircle = None
 		self.circles.append(Circle(20, 50, 150))
 		self.circles.append(Circle(20, 450, 150))
+
+
+	def setupTimer(self):
+		self.timer = QtCore.QtTimer()
+		self.timer.timeout.connect(self.timeUp)
 
 
 	def drawCircles(self, event, qp):
 		for circle in self.circles:
 			circle.drawCircle(event, qp)
+
+
+	def timeUp(self):
+		self.timer.stop()
+		print "Time is up!"
 
 
 def main():

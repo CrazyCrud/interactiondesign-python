@@ -16,8 +16,8 @@ class Circle():
 		qp.drawEllipse(self.center, self.radius, self.radius)
 
 
-	def isClicked(self, x, y):
-		result = math.pow((x - self.center.x()), 2) + math.pow((y - self.center.y()), 2)
+	def isClicked(self, pos):
+		result = math.pow((pos.x() - self.center.x()), 2) + math.pow((pos.y() - self.center.y()), 2)
 		if result <= math.pow(self.radius, 2):
 			return True
 		else:
