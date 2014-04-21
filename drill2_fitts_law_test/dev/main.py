@@ -1,15 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
+from sys import argv, exit
 from circle import Circle
 from PyQt4 import QtGui, QtCore
 
 class ClickRecorder(QtGui.QWidget):
 
 	def requestFileName(self):
+		if len(sys.argv) < 2:
+			exit(0)
+		else:
+			self.fileName = argv[1]
 		#self.fileName = raw_input("Please enter the file name including path containing descriptions for this test.")
-		self.fileName = "../test/test_setup.txt"
+		#self.fileName = "../test/test_setup.txt"
 
 	def readTestSetup(self):
 
@@ -20,7 +24,7 @@ class ClickRecorder(QtGui.QWidget):
 
 		if not content:
 			print 'File is empty'
-		
+			exit(0)
 		#split array of form
 		#USER:1
 		#WIDTHS:10,20,30,40
@@ -31,17 +35,17 @@ class ClickRecorder(QtGui.QWidget):
 
 		#split content into array with infos of the user
 		usersData = content.split('(User)')
-		
+
 		self.setupData = {}
 
 		for userData in usersData:
-			userLines = userData.split()	    
+			userLines = userData.split()
 			userId = userLines[0].split(':')[1]
 			widths = map(int, userLines[1].split(':')[1].split(','))
 			distances = map(int, userLines[2].split(':')[1].split(','))
-		
+
 			self.setupData.update(
-			{   userId : 
+			{   userId :
 				{
 					"widths" : widths,
 					"distances" : distances
@@ -52,13 +56,12 @@ class ClickRecorder(QtGui.QWidget):
 
 	def __init__(self):
 		super(ClickRecorder, self).__init__()
+		self.requestFileName()
+		self.readTestSetup()
 		self.testCounter = 0
 		self.clickCounter = 0
 		self.initUI()
-		self.requestFileName()
-		self.readTestSetup()
-	
-		
+
 	def initUI(self):
 		self.text = "Click test"
 		#set window size
@@ -73,9 +76,9 @@ class ClickRecorder(QtGui.QWidget):
 	def keyPressEvent(self, ev):
 		if ev.key() == QtCore.Qt.Key_Space:
 			self.counter += 1
-			self.update()  
-''' 
-		
+			self.update()
+'''
+
 def main():
 	app = QtGui.QApplication(sys.argv)
 	click = ClickRecorder()
