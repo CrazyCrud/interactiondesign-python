@@ -1,19 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from sys import argv, exit
+import sys
 from circle import Circle
 from PyQt4 import QtGui, QtCore
 
+
 class ClickRecorder(QtGui.QWidget):
+
 
 	def requestFileName(self):
 		if len(sys.argv) < 2:
 			exit(0)
 		else:
-			self.fileName = argv[1]
+			self.fileName = sys.argv[1]
 		#self.fileName = raw_input("Please enter the file name including path containing descriptions for this test.")
 		#self.fileName = "../test/test_setup.txt"
+
 
 	def readTestSetup(self):
 
@@ -57,27 +60,46 @@ class ClickRecorder(QtGui.QWidget):
 	def __init__(self):
 		super(ClickRecorder, self).__init__()
 		self.requestFileName()
-		self.readTestSetup()
-		self.testCounter = 0
-		self.clickCounter = 0
+		#self.readTestSetup()
 		self.initUI()
+		self.setupCircles()
+
 
 	def initUI(self):
-		self.text = "Click test"
-		#set window size
 		self.setGeometry(0, 0, 500, 300)
-		self.setWindowTitle('Click test')
+		self.setWindowTitle("A Study about Fitts's Law")
 		self.setFocusPolicy(QtCore.Qt.StrongFocus)
+		self.center()
 		self.show()
 
-		circle1 = Circle()
-		circle1.drawCircle()
-'''
-	def keyPressEvent(self, ev):
-		if ev.key() == QtCore.Qt.Key_Space:
-			self.counter += 1
-			self.update()
-'''
+	def center(self):
+		res = QtGui.QDesktopWidget().screenGeometry()
+		self.move((res.width() / 2) - (self.frameSize().width() / 2),
+			(res.height() / 2) - (self.frameSize().height() / 2))
+
+
+	def paintEvent(self, event):
+		qp = QtGui.QPainter()
+		qp.begin(self)
+		self.drawCircles(event, qp)
+		qp.end()
+
+
+	def mousePressEvent(self, event):
+		if event.button() == QtCore.Qt.LeftButton:
+			print "Left mouse button was clicked..."
+
+
+	def setupCircles(self):
+		self.circles = []
+		self.circles.append(Circle(20, 50, 150))
+		self.circles.append(Circle(20, 450, 150))
+
+
+	def drawCircles(self, event, qp):
+		for circle in self.circles:
+			circle.drawCircle(event, qp)
+
 
 def main():
 	app = QtGui.QApplication(sys.argv)
