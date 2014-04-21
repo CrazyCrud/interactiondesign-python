@@ -112,6 +112,7 @@ class ClickRecorder(QtGui.QWidget):
 						self.movements += 1
 						return
 					else:
+						self.currentCircle = None
 						self.errors += 1
 						return
 
@@ -121,7 +122,7 @@ class ClickRecorder(QtGui.QWidget):
 			self.currentCircle = None
 
 
-	def setupLoggin(self):
+	def setupLogging(self):
 		with open("user1.csv") as logfile:
 			output = csv.DictWriter(logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements", "Errors"])
 			output.writeHeader()
@@ -147,6 +148,13 @@ class ClickRecorder(QtGui.QWidget):
 	def timeUp(self):
 		self.timer.stop()
 		self.logResults()
+		self.resetTrial()
+
+
+	def resetTrial(self):
+		self.movements = 0
+		self.errors = 0
+		self.setupCircles()
 
 
 	def logResults(self):
