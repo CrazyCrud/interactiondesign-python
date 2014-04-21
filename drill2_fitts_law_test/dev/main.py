@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import csv
 from circle import Circle
 from PyQt4 import QtGui, QtCore
 
@@ -120,7 +121,9 @@ class ClickRecorder(QtGui.QWidget):
 
 
 	def setupLoggin(self):
-		pass
+		self.logfile = open("user1.csv")
+		output = csv.DictWriter(self.logfile, ["UserID", "Width", "Distance", "Timestamp", "Movements"])
+		output.writeHeader()
 
 
 	def setupCircles(self):
@@ -151,7 +154,7 @@ class ClickRecorder(QtGui.QWidget):
 
 def main():
 	app = QtGui.QApplication(sys.argv)
-	click = ClickRecorder()
+	ClickRecorder()
 	sys.exit(app.exec_())
 
 
