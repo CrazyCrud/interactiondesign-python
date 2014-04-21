@@ -14,8 +14,6 @@ class ClickRecorder(QtGui.QWidget):
 			exit(0)
 		else:
 			self.fileName = sys.argv[1]
-		#self.fileName = raw_input("Please enter the file name including path containing descriptions for this test.")
-		#self.fileName = "../test/test_setup.txt"
 
 
 	def readTestSetup(self):
@@ -72,6 +70,7 @@ class ClickRecorder(QtGui.QWidget):
 		self.center()
 		self.show()
 
+
 	def center(self):
 		res = QtGui.QDesktopWidget().screenGeometry()
 		self.move((res.width() / 2) - (self.frameSize().width() / 2),
@@ -81,6 +80,9 @@ class ClickRecorder(QtGui.QWidget):
 	def paintEvent(self, event):
 		qp = QtGui.QPainter()
 		qp.begin(self)
+		qp.setRenderHint(qp.Antialiasing)
+		qp.setBrush(QtGui.QColor(255, 255, 255))
+		qp.drawRect(event.rect())
 		self.drawCircles(event, qp)
 		qp.end()
 
