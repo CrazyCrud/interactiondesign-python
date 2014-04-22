@@ -95,7 +95,6 @@ class ClickRecorder(QtGui.QWidget):
 	def setupTrial(self):
 		self.movements = 0
 		self.errors = 0
-		self.trialsCount += 1
 		self.isReady = False
 
 
@@ -123,8 +122,11 @@ class ClickRecorder(QtGui.QWidget):
 		qp.setRenderHint(qp.Antialiasing)
 		qp.setBrush(QtGui.QColor(255, 255, 255))
 		qp.drawRect(event.rect())
-		self.drawCircles(event, qp)
-		self.drawState(event, qp)
+		if self.trialsCount > 3:
+			pass
+		else:
+			self.drawCircles(event, qp)
+			self.drawState(event, qp)
 		qp.end()
 
 
@@ -184,7 +186,6 @@ class ClickRecorder(QtGui.QWidget):
 
 
 	def timeUp(self):
-		print "Time is up"
 		self.timer.stop()
 		self.logResults()
 		self.resetTrial()
@@ -194,6 +195,7 @@ class ClickRecorder(QtGui.QWidget):
 		self.isReady = False
 		self.movements = 0
 		self.errors = 0
+		self.trialsCount += 1
 		self.setupCircles()
 		self.update()
 
