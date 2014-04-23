@@ -22,3 +22,9 @@ class Circle():
 			return True
 		else:
 			return False
+
+	def x(self):
+		return self.center.x()
+
+	def y(self):
+		return self.center.y()
