@@ -144,7 +144,7 @@ class ClickRecorder(QtGui.QWidget):
         qp.setPen(QtGui.QColor(80, 80, 80))
         qp.setFont(QtGui.QFont('Decorative', 24))
         if self.experimentOver == True:
-            qp.drawText(event.rect(), QtCore.Qt.AlignCenter, "Danke für die Teilnahme!")
+            qp.drawText(event.rect(), QtCore.Qt.AlignCenter, u"Danke für die Teilnahme!")
         else:
             qp.drawText(event.rect(), QtCore.Qt.AlignCenter, str(self.trialsCount + (self.trialsRepetition * self.maxTrialsCount)) +
                 "/" + str(self.maxTrialsCount * self.maxTrialsRepetition))
