@@ -93,6 +93,9 @@ class ClickRecorder(QtGui.QWidget):
         self.initPosY = 0
         self.targetPosX = 0
         self.targetPosY = 0
+        self.maxTrialsCount = 16
+        self.experimentOver = False
+        self.trialSeconds = 30
 
     def initUser(self):
         self.trialsCount = 0
@@ -118,7 +121,7 @@ class ClickRecorder(QtGui.QWidget):
         qp.setRenderHint(qp.Antialiasing)
         qp.setBrush(QtGui.QColor(255, 255, 255))
         qp.drawRect(event.rect())
-        if self.trialsCount > 3:
+        if self.experimentOver == True:
             pass
         else:
             self.drawCircles(event, qp)
@@ -126,7 +129,7 @@ class ClickRecorder(QtGui.QWidget):
         qp.end()
 
 
-    def mousePressEvent(self, event):       
+    def mousePressEvent(self, event):
 
         self.isCircleHit = False
 
@@ -137,7 +140,7 @@ class ClickRecorder(QtGui.QWidget):
 
             if self.timer.isActive() == False:
                 print "Start timer"
-                self.timer.start(1000 * 5)#!!
+                self.timer.start(1000 * self.trialSeconds)#!!
 
             for i in range(len(self.circles)):
                 circle = self.circles[i]
@@ -196,7 +199,7 @@ class ClickRecorder(QtGui.QWidget):
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Space:
-            if self.timer.isActive():
+            if self.timer.isActive() or self.experimentOver == True:
                 return
             else:
                 self.isReady = not self.isReady
@@ -206,7 +209,6 @@ class ClickRecorder(QtGui.QWidget):
 
     def timeUp(self):
         self.timer.stop()
-        #self.logResults()
         self.resetTrial()
 
 
@@ -215,6 +217,9 @@ class ClickRecorder(QtGui.QWidget):
         self.movements = 0
         self.errors = 0
         self.trialsCount += 1
+        if self.trialsCount > (self.maxTrialsCount - 1):
+            self.experimentOver = True
+
         self.setupCircles()
         self.update()
 
