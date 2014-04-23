@@ -260,7 +260,7 @@ class ClickRecorder(QtGui.QWidget):
             timestampStr = timestamp
             data = {
                 "UserID": self.userId,
-                "TrialNr": self.trialsCount,
+                "TrialNr": (self.trialsCount + 1),
                 "Width": self.distWidthCombis[self.trialsCount][1],
                 "Distance": self.distWidthCombis[self.trialsCount][0],
                 "Timestamp": timestampStr,
