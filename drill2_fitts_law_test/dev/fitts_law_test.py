@@ -16,8 +16,7 @@ class ClickRecorder(QtGui.QWidget):
 
     def requestFileName(self):
         if len(sys.argv) < 2:
-        #exit(0)
-            self.fileName = "user1.txt"
+            exit(0)
         else:
             self.fileName = sys.argv[1]
 
@@ -170,7 +169,7 @@ class ClickRecorder(QtGui.QWidget):
     def setupLogging(self):
         self.logColumnHeaders = [
             "UserID",
-            "TrialNr",
+            "Trial",
             "Width",
             "Distance",
             "Timestamp",
@@ -181,7 +180,7 @@ class ClickRecorder(QtGui.QWidget):
             "TargetPosY",
             "ClickPosX",
             "ClickPosY",
-            "IsCircleHit",
+            "IsTargetHit",
             "Errors"]
 
         if os.path.exists(self.filename + ".csv"):
@@ -198,7 +197,7 @@ class ClickRecorder(QtGui.QWidget):
             timestamp = datetime.now()
             data = {
                 "UserID": self.userId,
-                "TrialNr": (self.trialsCount + 1) + (self.trialsRepetition * self.maxTrialsCount),
+                "Trial": (self.trialsCount + 1) + (self.trialsRepetition * self.maxTrialsCount),
                 "Width": self.distWidthCombis[self.trialsCount][1],
                 "Distance": self.distWidthCombis[self.trialsCount][0],
                 "Timestamp": timestamp,
@@ -209,7 +208,7 @@ class ClickRecorder(QtGui.QWidget):
                 "TargetPosY": self.targetPosY,
                 "ClickPosX": self.clickPosX,
                 "ClickPosY": self.clickPosY,
-                "IsCircleHit": self.isCircleHit,
+                "IsTargetHit": self.isCircleHit,
                 "Errors": self.errors
             }
             output = csv.DictWriter(logfile, self.logColumnHeaders, delimiter=';')
