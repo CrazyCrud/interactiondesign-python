@@ -16,7 +16,8 @@ class ClickRecorder(QtGui.QWidget):
 
     def requestFileName(self):
         if len(sys.argv) < 2:
-            exit(0)
+            sys.exit(0)
+            #self.fileName = "user5.txt"
         else:
             self.fileName = sys.argv[1]
 
@@ -24,12 +25,11 @@ class ClickRecorder(QtGui.QWidget):
     def readTestSetup(self):
         #read input
         with open(self.fileName) as f:
-        #with open(self.fileName) as f:
             content = f.read()
 
         if not content:
-            print 'File is empty'
-            exit(0)
+            #print "File is empty"
+            sys.exit(0)
 
         userLines = content.split()
 
@@ -56,20 +56,17 @@ class ClickRecorder(QtGui.QWidget):
         self.setupTrial()
         self.setupLogging()
 
-
     def setupStartRect(self):
         self.marginTop = self.res.height() / 3
         self.marginLeft = 100
-        self.rect = QtCore.QRect(self.marginLeft, self.marginTop, 50, 50)
-
+        self.startCircle = Circle(50, self.marginLeft, self.marginTop)
 
     def setupCircle(self):
         width = self.distWidthCombis[self.trialsCount][1]
         distance = self.distWidthCombis[self.trialsCount][0]
-        marginLeft = self.marginLeft + self.rect.width() + distance
-        self.circle = Circle(width, marginLeft - width / 2, self.marginTop + self.rect.height() / 2)
+        marginLeft = self.marginLeft + self.startCircle.diameter + distance
+        self.circle = Circle(width, marginLeft - width / 2, self.marginTop)
         self.update()
-
 
     def setupTrial(self):
         self.circle = None
@@ -80,14 +77,12 @@ class ClickRecorder(QtGui.QWidget):
         self.trialsRepetition = 0
         self.trialsCount = 0
 
-
     def initUI(self):
         self.setWindowTitle("A Study about Fitts's Law")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.showFullScreen()
         self.show()
         self.res = QtGui.QDesktopWidget().screenGeometry()
-
 
     def paintEvent(self, event):
         qp = QtGui.QPainter()
@@ -96,27 +91,25 @@ class ClickRecorder(QtGui.QWidget):
         qp.setBrush(QtGui.QColor(255, 255, 255))
         qp.drawRect(event.rect())
         self.drawState(event, qp)
-        if self.experimentOver == True:
+        if self.experimentOver is True:
             pass
         else:
-            self.drawCircle(event, qp)
-            self.drawStartRect(event, qp)
+            self.drawCircles(event, qp)
         qp.end()
-
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            if self.rect.contains(event.pos(), True) and self.circle == None:
+            if self.startCircle.isClicked(event.pos()) and self.circle is None:
                 self.setupCircle()
                 self.initPosX = event.pos().x()
                 self.initPosY = event.pos().y()
                 self.targetPosX = self.circle.x()
                 self.targetPosY = self.circle.y()
                 self.start = int(round(time.time() * 1000))
-            elif self.circle != None:
+            elif self.circle is not None:
                 self.clickPosX = event.pos().x()
                 self.clickPosY = event.pos().y()
-                if self.circle.isClicked(event.pos()) == True:
+                if self.circle.isClicked(event.pos()) is True:
                     self.isCircleHit = True
                 else:
                     self.isCircleHit = False
@@ -124,47 +117,44 @@ class ClickRecorder(QtGui.QWidget):
                 self.logResults()
                 self.resetTrial()
 
-
     def addError(self):
         self.errors += 1
 
-
-    def drawCircle(self, event, qp):
-        if self.circle != None:
+    def drawCircles(self, event, qp):
+        if self.circle is not None:
             self.circle.drawCircle(event, qp)
-
-
-    def drawStartRect(self, event, qp):
-        qp.setBrush(QtGui.QColor(200, 200, 200))
-        qp.drawRect(self.rect)
-
+        self.startCircle.drawCircle(event, qp)
 
     def drawState(self, event, qp):
         qp.setPen(QtGui.QColor(80, 80, 80))
         qp.setFont(QtGui.QFont('Decorative', 24))
-        if self.experimentOver == True:
-            qp.drawText(event.rect(), QtCore.Qt.AlignCenter, u"Danke für die Teilnahme!")
+        if self.experimentOver is True:
+            qp.drawText(event.rect(), QtCore.Qt.AlignCenter,
+                        "Danke für die Teilnahme!")
         else:
-            qp.drawText(event.rect(), QtCore.Qt.AlignCenter, str(self.trialsCount + (self.trialsRepetition * self.maxTrialsCount)) +
-                "/" + str(self.maxTrialsCount * self.maxTrialsRepetition))
-
+            qp.drawText(
+                event.rect(), QtCore.Qt.AlignCenter,
+                str(self.trialsCount
+                    + (self.trialsRepetition * self.maxTrialsCount))
+                + "/" + str(self.maxTrialsCount * self.maxTrialsRepetition))
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
-
 
     def resetTrial(self):
         self.trialsCount += 1
         if self.trialsCount > 0 and self.trialsCount % 16 == 0:
             self.trialsRepetition += 1
             self.trialsCount = 0
-        if (self.trialsCount + (self.trialsRepetition * self.maxTrialsCount)) >= (self.maxTrialsCount * self.maxTrialsRepetition):
+
+        count = (self.trialsRepetition * self.maxTrialsCount)
+        count += self.trialsCount
+        if (count) >= (self.maxTrialsCount * self.maxTrialsRepetition):
             self.experimentOver = True
         self.circle = None
         self.start = -1
         self.update()
-
 
     def setupLogging(self):
         self.logColumnHeaders = [
@@ -187,21 +177,22 @@ class ClickRecorder(QtGui.QWidget):
             return
         else:
             with open(self.filename + ".csv", "ab") as logfile:
-                output = csv.DictWriter(logfile, self.logColumnHeaders,
-                    delimiter=';')
+                output = csv.DictWriter(
+                    logfile, self.logColumnHeaders, delimiter=';')
                 output.writeheader()
-
 
     def logResults(self):
         with open(self.filename + ".csv", "ab") as logfile:
             timestamp = datetime.now()
             data = {
                 "UserID": self.userId,
-                "Trial": (self.trialsCount + 1) + (self.trialsRepetition * self.maxTrialsCount),
+                "Trial": (self.trialsCount + 1)
+                + (self.trialsRepetition * self.maxTrialsCount),
                 "Width": self.distWidthCombis[self.trialsCount][1],
                 "Distance": self.distWidthCombis[self.trialsCount][0],
                 "Timestamp": timestamp,
-                "MovementTime (ms)": (int(round(time.time() * 1000)) - self.start),
+                "MovementTime (ms)": (
+                    int(round(time.time() * 1000)) - self.start),
                 "InitPosX": self.initPosX,
                 "InitPosY": self.initPosY,
                 "TargetPosX": self.targetPosX,
@@ -211,15 +202,15 @@ class ClickRecorder(QtGui.QWidget):
                 "IsTargetHit": self.isCircleHit,
                 "Errors": self.errors
             }
-            output = csv.DictWriter(logfile, self.logColumnHeaders, delimiter=';')
+            output = csv.DictWriter(
+                logfile, self.logColumnHeaders, delimiter=';')
             output.writerow(data)
 
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    click = ClickRecorder()
+    sys.click = ClickRecorder()
     sys.exit(app.exec_())
-
 
 if __name__ == '__main__':
     main()
