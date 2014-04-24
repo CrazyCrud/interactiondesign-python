@@ -17,7 +17,6 @@ class ClickRecorder(QtGui.QWidget):
     def requestFileName(self):
         if len(sys.argv) < 2:
             sys.exit(0)
-            #self.fileName = "user5.txt"
         else:
             self.fileName = sys.argv[1]
 
@@ -97,8 +96,11 @@ class ClickRecorder(QtGui.QWidget):
             self.drawCircles(event, qp)
         qp.end()
 
+    #handle mouse press event
     def mousePressEvent(self, event):
+        #check only left buton click
         if event.button() == QtCore.Qt.LeftButton:
+            #start circle is hit and there's no target circle right now
             if self.startCircle.isClicked(event.pos()) and self.circle is None:
                 self.setupCircle()
                 self.initPosX = event.pos().x()
@@ -106,9 +108,11 @@ class ClickRecorder(QtGui.QWidget):
                 self.targetPosX = self.circle.x()
                 self.targetPosY = self.circle.y()
                 self.start = int(round(time.time() * 1000))
+            #there's a target circle
             elif self.circle is not None:
                 self.clickPosX = event.pos().x()
                 self.clickPosY = event.pos().y()
+
                 if self.circle.isClicked(event.pos()) is True:
                     self.isCircleHit = True
                 else:
@@ -125,6 +129,7 @@ class ClickRecorder(QtGui.QWidget):
             self.circle.drawCircle(event, qp)
         self.startCircle.drawCircle(event, qp)
 
+    #draw hints for the different states
     def drawState(self, event, qp):
         qp.setPen(QtGui.QColor(80, 80, 80))
         qp.setFont(QtGui.QFont('Decorative', 24))
@@ -142,6 +147,7 @@ class ClickRecorder(QtGui.QWidget):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
+    #reset variables for a new trial
     def resetTrial(self):
         self.trialsCount += 1
         if self.trialsCount > 0 and self.trialsCount % 16 == 0:
@@ -156,6 +162,7 @@ class ClickRecorder(QtGui.QWidget):
         self.start = -1
         self.update()
 
+    #setup log csv file
     def setupLogging(self):
         self.logColumnHeaders = [
             "UserID",
@@ -181,7 +188,9 @@ class ClickRecorder(QtGui.QWidget):
                     logfile, self.logColumnHeaders, delimiter=';')
                 output.writeheader()
 
+    #log results in a csv file
     def logResults(self):
+        #append data
         with open(self.filename + ".csv", "ab") as logfile:
             timestamp = datetime.now()
             data = {
