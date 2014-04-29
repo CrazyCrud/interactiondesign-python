@@ -1,0 +1,5 @@
+# KLM operators for logging in to a system
+m8k # remember username, enter eight keystrokes for username
+k # tab, switches to password field
+m13k # remember and enter password (13 characters),
+hpbb # switch to mouse, move over "sign in" button, click.
