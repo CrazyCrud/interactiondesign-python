@@ -35,6 +35,12 @@ def parse_file(file):
             operators_map[operator] = operators_map[operator] + count
         else:
             operators_map[operator] = count
+    compute_time(operators_map)
+
+
+def compute_time(operators_map):
+    for key in operators_map:
+        print key, " * ", operators_map[key]
 
 
 def remove_comment(line):
