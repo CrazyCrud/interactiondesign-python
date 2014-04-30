@@ -39,8 +39,9 @@ def parse_file(file):
 
 
 def compute_time(operators_map):
+    time = {'k': 10, 'm': 10, 'k': 10, }
     for key in operators_map:
-        print key, " * ", operators_map[key]
+        print time[key], " * ", operators_map[key]
 
 
 def remove_comment(line):
