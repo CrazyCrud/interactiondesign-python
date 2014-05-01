@@ -9,8 +9,6 @@ def main():
     if(len(sys.argv) > 1):
         with open(sys.argv[1], 'r') as f:
             parse_file(f)
-    else:
-        pass
 
 
 def parse_file(file):
@@ -29,19 +27,34 @@ def parse_file(file):
 
         results = re.search(r'[a-zA-Z]+', sequence)
         if results is not None:
-            operator = results.group()
-
-        if operator in operators_map:
-            operators_map[operator] = operators_map[operator] + count
+            operator = results.group().lower()
         else:
-            operators_map[operator] = count
+            operator = None
+
+        if operator is None:
+            continue
+        else:
+            if operator in operators_map:
+                operators_map[operator] = operators_map[operator] + count
+            else:
+                operators_map[operator] = count
     compute_time(operators_map)
 
 
 def compute_time(operators_map):
-    time = {'k': 10, 'm': 10, 'k': 10, }
+    #k: keystroke
+    #p: point with mouse to a target on a display
+    #b: press or release mouse button
+    #h: home hands to keyboard or mouse
+    #m: mental act of rountine thinking
+    #w: waiting time for the system to respond (negligible)
+    standard_operator_time = {'k': 0.28, 'p': 1.1, 'b': 0.1, 'h': 0.4, 'm': 1.2}
+    time = 0
     for key in operators_map:
-        print time[key], " * ", operators_map[key]
+        if key in standard_operator_time:
+            print key, ": ", standard_operator_time[key], "*", operators_map[key]
+            time += operators_map[key] * standard_operator_time[key]
+    print "The overall time to complete the task was", time, "seconds"
 
 
 def remove_comment(line):
