@@ -7,7 +7,7 @@ k # uppercase
 h # home hands to the mouse
 p # point to the start of 'TOLL!'
 b # press and hold the left mouse button
-p # point to the end of 'TOLL!'
+p # point to the end of 'TOLL'
 b # release left mouse button
 p # point to BOLD icon
 bb # click BOLD icon

@@ -5,4 +5,4 @@ h # home hands to keyboard
 k # uppercase
 5k # typing 'TOLL!'
 6k # mark 'TOLL!' (Left-Shift(pressed)-Left-Left-Left-Left)
-2k # making it bold (Ctrl-B)
+2k # making it bold (Ctrl-Shift-F)
