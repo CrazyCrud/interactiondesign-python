@@ -1,11 +1,13 @@
 p # point the mouse to a new line
-b # set the text cursor
+bb # set the text cursor (click)
 h # home hands to keyboard
-13k # type all letters inlcuding whitespaces and make 'toll' uppercase while typing (SHIFT)
+8k # type all letters including whitespaces till 'TOLL!'
+k # uppercase
+5k # typing 'TOLL!'
 h # home hands to the mouse
-p # point to the start of the word 'TOLL'
-b # click the left mouse button
-p # point to the end of the word 'TOLL'
+p # point to the start of 'TOLL!'
+b # press and hold the left mouse button
+p # point to the end of 'TOLL!'
 b # release left mouse button
 p # point to BOLD icon
 bb # click BOLD icon

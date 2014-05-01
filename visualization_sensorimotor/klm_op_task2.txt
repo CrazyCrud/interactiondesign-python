@@ -1,6 +1,8 @@
 p # point the mouse to a new line
-b # set the text cursor
+bb # set the text cursor (click)
 h # home hands to keyboard
-13k # type all letters inlcuding whitespaces and make 'toll' uppercase while typing (SHIFT)
-5k # mark the word 'TOLL'
+8k # type all letters including whitespaces till 'TOLL!'
+k # uppercase
+5k # typing 'TOLL!'
+6k # mark 'TOLL!' (Left-Shift(pressed)-Left-Left-Left-Left)
 2k # making it bold (Ctrl-B)
