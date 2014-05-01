@@ -1,0 +1,7 @@
+p # point the mouse to a new line
+b # set the text cursor
+h # home hands to keyboard
+8k # type all letters inlcuding whitespaces till 'TOLL'
+2k # making it bold (Ctrl-B)
+1k # uppercase
+4k # typing the word 'toll'
