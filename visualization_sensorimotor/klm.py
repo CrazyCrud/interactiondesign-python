@@ -48,12 +48,14 @@ def compute_time(operators_map):
     #h: home hands to keyboard or mouse
     #m: mental act of rountine thinking or perception
     #w: waiting time for the system to respond (negligible)
-    #the times are chosen for average nonsecretarial typists
-    standard_operator_time = {'k': 0.28, 'p': 1.1, 'b': 0.1, 'h': 0.4, 'm': 1.2}
+    # the times are chosen for average nonsecretarial typists
+    standard_operator_time = {
+        'k': 0.28, 'p': 1.1, 'b': 0.1, 'h': 0.4, 'm': 1.2}
     time = 0
     for key in operators_map:
         if key in standard_operator_time:
-            print key, ": ", standard_operator_time[key], "*", operators_map[key]
+            print key, ": ",
+            standard_operator_time[key], "*", operators_map[key]
             time += operators_map[key] * standard_operator_time[key]
     print "The overall time to complete the task was", time, "seconds"
 
