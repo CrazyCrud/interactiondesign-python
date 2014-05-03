@@ -1,0 +1,18 @@
+a) The performance of which type of user can be predicted by KLM, according to Card et al.?
+Card et al. stated that the KLM can be predicted for expert users who are familiar with the system. 
+Expert users can choose between one or more methods to solve tasks out of which they choose the fastest. [1]
+
+b) Which Fitts’ Law formulation is used by Card et al.?
+Card et al. use this formulation of Fitts’s law:
+p = .8 + .1 log2 (d/s + .5) sec
+This variation of Fitts’s law was introduced by Welford. [2]
+
+c) Why might the original KLM not perfectly model input performance on a laptop? How could it be adapted?
+On a laptop there is the possiblity to use the touchpad instead of a mouse. In most cases this should be reached faster than a mouse, eventually even without having
+to move the wrists. 
+In this case the operator H (home hands to keyboard or mouse) should be ignored or there should be used an additional operator with an appropriate estimated time.
+
+Sources
+[1] Card, S. K., Moran, T. P., & Newell, A., “The keystroke-level model for user performance time with interactive systems,” in Commun. ACM, 23, 1980, pp 396-410
+
+[2] S. MacKenzie , “Fitts’s Law as a Research and Design Tool in Human-Computer Interaction,” in Human-computer interaction, Vol. 7, 1992, p. 104.
