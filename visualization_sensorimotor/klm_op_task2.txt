@@ -6,5 +6,6 @@ h # home hands to keyboard
 k # uppercase
 5k # typing 'TOLL!'
 m # think about marking ‘TOLL’ to make it bold
-6k # mark 'TOLL' (Left-Shift(pressed)-Left-Left-Left-Left)
-2k # making it bold (Ctrl-Shift-F)
+k # set cursor after the last letter of ‘TOLL’
+5k # mark 'TOLL' (Left-Shift(pressed)-Left-Left-Left-Left)
+2k # making it bold (Ctrl-Shift-F) with Shift already pressed
