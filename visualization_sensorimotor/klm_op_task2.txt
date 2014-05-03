@@ -1,8 +1,10 @@
+m # reflect about the task and how to complete it
 p # point the mouse to a new line
 bb # set the text cursor (click)
 h # home hands to keyboard
 8k # type all letters including whitespaces till 'TOLL!'
 k # uppercase
 5k # typing 'TOLL!'
-6k # mark 'TOLL!' (Left-Shift(pressed)-Left-Left-Left-Left)
+m # think about marking ‘TOLL’ to make it bold
+6k # mark 'TOLL' (Left-Shift(pressed)-Left-Left-Left-Left)
 2k # making it bold (Ctrl-Shift-F)

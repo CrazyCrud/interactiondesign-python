@@ -1,13 +1,16 @@
+m # reflect about the task and how to complete it
 p # point the mouse to a new line
 bb # set the text cursor (click)
 h # home hands to keyboard
 8k # type all letters including whitespaces till 'TOLL!'
 k # uppercase
 5k # typing 'TOLL!'
+m # think about formatting‘TOLL’
 h # home hands to the mouse
 p # point to the start of 'TOLL!'
 b # press and hold the left mouse button
 p # point to the end of 'TOLL'
 b # release left mouse button
+m # think about searching for the BOLD icon
 p # point to BOLD icon
 bb # click BOLD icon

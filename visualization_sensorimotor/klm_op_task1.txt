@@ -1,9 +1,12 @@
+m # reflect about the task and how to complete it
 p # point the mouse to a new line
 bb # set the text cursor (click)
 h # home hands to keyboard
 8k # type all letters including whitespaces till 'TOLL!'
+m # think about writing the next word bold and uppercase
 2k # making it bold (Ctrl-Shift-F)
 k # uppercase
 5k # typing 'TOLL'
+m # think about redoing text formatting as ‘!’ should not be bold
 2k # making it normal (Ctr-Shift-F)
 k # type '!'
