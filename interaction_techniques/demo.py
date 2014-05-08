@@ -24,6 +24,7 @@ class Demo(QtGui.QWidget):
         box_layout.setSpacing(0)
 
         scroll_area = QtGui.QScrollArea()
+        self.connect(scroll_area, QtCore.SIGNAL("mousePressEvent()"), self.scrollBarClicked)
 
         inline_widget = QtGui.QWidget(self)
         inline_box = QtGui.QVBoxLayout(inline_widget)
@@ -42,6 +43,9 @@ class Demo(QtGui.QWidget):
 
         scroll_area.setWidget(inline_widget)
         box_layout.addWidget(scroll_area)
+
+    def scrollBarClicked(self):
+        print "Scrollbar was clicked"
 
 
 def main():
