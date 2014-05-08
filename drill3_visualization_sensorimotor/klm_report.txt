@@ -1,0 +1,62 @@
+Task 1:
+m # reflect about the task and how to complete it
+p # point the mouse to a new line
+bb # set the text cursor (click)
+h # home hands to keyboard
+8k # type all letters including whitespaces till 'TOLL!'
+m # think about writing the next word bold and uppercase
+3k # making it bold (Ctrl-Shift-F)
+k # uppercase
+5k # typing 'TOLL'
+m # think about redoing text formatting as ‘!’ should not be bold
+3k # making it normal (Ctr-Shift-F)
+k # type '!'
+
+Predicted completion time: 11.18 s
+Actual completion time: 
+(10.475 + 8.1+ 6.2 + 4.7 + 5.2)/5 = 34.675 / 5 = 6.935
+
+
+
+
+Task 2:
+m # reflect about the task and how to complete it
+p # point the mouse to a new line
+bb # set the text cursor (click)
+h # home hands to keyboard
+8k # type all letters including whitespaces till 'TOLL!'
+k # uppercase
+5k # typing 'TOLL!'
+m # think about marking ‘TOLL’ to make it bold
+k # set cursor after the last letter of ‘TOLL’
+5k # mark 'TOLL' (Left-Shift(pressed)-Left-Left-Left-Left)
+2k # making it bold (Ctrl-Shift-F) with Shift already pressed
+
+Predicted completion time: 10.26s
+Actual completion time:  
+(5.75 + 5.23 + 5.8 + 5.7 + 5.4)/5 = 27.88/5 = 5.576
+
+
+
+
+Task 3:
+m # reflect about the task and how to complete it
+p # point the mouse to a new line
+bb # set the text cursor (click)
+h # home hands to keyboard
+8k # type all letters including whitespaces till 'TOLL!'
+k # uppercase
+5k # typing 'TOLL!'
+m # think about formatting‘TOLL’ 
+h # home hands to the mouse
+p # point to the start of 'TOLL!'
+b # press and hold the left mouse button
+p # point to the end of 'TOLL'
+b # release left mouse button
+m # think about searching for the BOLD icon
+p # point to BOLD icon
+bb # click BOLD icon
+
+Predicted completion time: 13.32s
+Actual completion time: 
+(10.12 + 10.51 + 6.1 + 5.8 + 5.8)/5 = 38.33 / 5 = 7.66
