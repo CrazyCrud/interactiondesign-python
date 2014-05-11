@@ -3,12 +3,14 @@
 import sys
 from random import randint
 from PyQt4 import QtGui, QtCore
+from MyScrollbar import MyScrollbar
 
 
 class Demo(QtGui.QWidget):
     def __init__(self, parent=None, items=20):
         QtGui.QWidget.__init__(self, parent)
         self.setGeometry(100, 100, 300, 300)
+        self.setFixedSize(300, 300)
         self.setWindowTitle('Your Scrollbar Helper')
         self.placeholders = [
             u"""Am Anfang wurde das Universum erschaffen.
@@ -24,7 +26,18 @@ class Demo(QtGui.QWidget):
         box_layout.setSpacing(0)
 
         scroll_area = QtGui.QScrollArea()
-        self.connect(scroll_area, QtCore.SIGNAL("mousePressEvent()"), self.scrollBarClicked)
+
+        self.scroll_bar = MyScrollbar()
+
+        scroll_area.setVerticalScrollBar(self.scroll_bar)
+
+        # self.connect(self.scroll_bar, QtCore.SIGNAL(
+        #    "scrollbarPressed"), self.scrollBarClicked)
+
+        self.connect(self.scroll_bar, QtCore.SIGNAL(
+            "sliderPressed()"), self.sliderPressed)
+        self.connect(self.scroll_bar, QtCore.SIGNAL(
+            "valueChanged(int)"), self.sliderPositionChanged)
 
         inline_widget = QtGui.QWidget(self)
         inline_box = QtGui.QVBoxLayout(inline_widget)
@@ -44,8 +57,21 @@ class Demo(QtGui.QWidget):
         scroll_area.setWidget(inline_widget)
         box_layout.addWidget(scroll_area)
 
-    def scrollBarClicked(self):
-        print "Scrollbar was clicked"
+    def sliderPressed(self):
+        # should only down after double-click
+        self.scroll_bar.setMarker()
+        print "Slider was pressed"
+
+    def sliderPositionChanged(self, value):
+        self.scroll_bar.updatePosition(value)
+        print "Value ", value
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Space:
+            value = self.scroll_bar.getNextMaker()
+            # self.scroll_bar.value(value)
+            print "Jump to next mark..."
+            pass
 
 
 def main():
