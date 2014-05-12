@@ -28,7 +28,7 @@ class MyScrollbar(QtGui.QScrollBar):
         self.sortMarkers()
 
     def sortMarkers(self):
-        sorted(self.markers, key=int)
+        self.markers.sort(key=int, reverse=False)
 
     def getNextMaker(self):
         next_marker = None
