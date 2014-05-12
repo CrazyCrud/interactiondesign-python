@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import time
 from random import randint
 from PyQt4 import QtGui, QtCore
 from MyScrollbar import MyScrollbar
@@ -12,6 +13,8 @@ class Demo(QtGui.QWidget):
         self.setGeometry(100, 100, 300, 300)
         self.setFixedSize(300, 300)
         self.setWindowTitle('Your Scrollbar Helper')
+        self.last_timestamp = None
+        self.threshold = 600
         self.placeholders = [
             u"""Am Anfang wurde das Universum erschaffen.
         Das machte viele Leute sehr wütend und wurde allenthalben als
@@ -58,9 +61,16 @@ class Demo(QtGui.QWidget):
         box_layout.addWidget(scroll_area)
 
     def sliderPressed(self):
-        # should only down after double-click
-        self.scroll_bar.setMarker()
-        print "Slider was pressed"
+        current_stamp = int(round(time.time() * 1000))
+        if self.last_timestamp == None:
+            self.last_timestamp = current_stamp
+            return
+        elif (current_stamp - self.last_timestamp) < self.threshold:
+            self.scroll_bar.setMarker()
+            self.last_timestamp = None
+            return
+        else:
+            self.last_timestamp = current_stamp
 
     def sliderPositionChanged(self, value):
         self.scroll_bar.updatePosition(value)
@@ -69,9 +79,9 @@ class Demo(QtGui.QWidget):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Space:
             value = self.scroll_bar.getNextMaker()
-            # self.scroll_bar.value(value)
-            print "Jump to next mark..."
-            pass
+            if value != None:
+                print "Jump to mark ", value
+                self.scroll_bar.setValue(value)
 
 
 def main():
