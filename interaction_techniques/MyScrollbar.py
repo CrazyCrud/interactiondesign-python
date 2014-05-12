@@ -23,9 +23,15 @@ class MyScrollbar(QtGui.QScrollBar):
         self.current_position = value
 
     def setMarker(self):
-        print "Set marker at ", self.current_position
-        self.markers.append(self.current_position)
-        self.sortMarkers()
+        index = None
+        try:
+            index = self.markers.index(self.current_position)
+        except ValueError:
+            index = None
+        if index is None:
+            print "Set marker at ", self.current_position
+            self.markers.append(self.current_position)
+            self.sortMarkers()
 
     def sortMarkers(self):
         self.markers.sort(key=int, reverse=False)
