@@ -60,6 +60,7 @@ class Demo(QtGui.QWidget):
         scroll_area.setWidget(inline_widget)
         box_layout.addWidget(scroll_area)
 
+    # its better to use double click as right click displays the context menu
     def sliderPressed(self):
         current_stamp = int(round(time.time() * 1000))
         if self.last_timestamp == None:
