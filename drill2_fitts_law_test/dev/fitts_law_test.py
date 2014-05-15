@@ -84,6 +84,7 @@ class ClickRecorder(QtGui.QWidget):
         self.res = QtGui.QDesktopWidget().screenGeometry()
 
     def paintEvent(self, event):
+        print "Paint"
         qp = QtGui.QPainter()
         qp.begin(self)
         qp.setRenderHint(qp.Antialiasing)
