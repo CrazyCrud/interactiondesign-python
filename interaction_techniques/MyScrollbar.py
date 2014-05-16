@@ -31,6 +31,18 @@ class MyScrollbar(QtGui.QScrollBar):
     def updatePosition(self, value):
         self.current_position = value
 
+        for k, v in self.visualizations.iteritems():
+            y_relative = self.value() + v.y_absolute * self.ui.height() / self.ui.scene.sceneRect().height()
+            #v.graphics_rect.setY(y_relative)
+            rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
+                y_relative, self.rect_visualization_w,
+                self.rect_visualization_h)
+
+            v.update(rect_marker)
+
+        self.update()
+        self.ui.update()
+
     def setMarker(self):
         index = None
         try:
@@ -55,10 +67,17 @@ class MyScrollbar(QtGui.QScrollBar):
 
     def visualizeMarker(self, marker):
         if (self.ui is not None) and (self.ui.scene is not None):
+            y_absolute = marker + self.cursor_pos.y()
+            y_relative = self.value() + y_absolute * self.ui.height() / self.ui.scene.sceneRect().height()
+
+            print "Relative y position: ", y_relative
+            print "Absolute y position: ", y_absolute
+
             rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
-                marker + self.cursor_pos.y(), self.rect_visualization_w,
+                y_absolute, self.rect_visualization_w,
                 self.rect_visualization_h)
-            tmp_rect = MyMarker(rect_marker)
+
+            tmp_rect = MyMarker(rect_marker, y_absolute)
             tmp_rect.saveScreenshot(self.makeScreenshot(), self.ui.scene.sceneRect())
             tmp_rect.setCursor(QtCore.Qt.PointingHandCursor)
             tmp_rect.setAcceptHoverEvents(True)

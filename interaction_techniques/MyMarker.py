@@ -4,10 +4,11 @@ from PyQt4 import QtGui, QtCore
 
 
 class MyMarker(QtGui.QGraphicsRectItem):
-    def __init__(self, rect):
+    def __init__(self, rect, y_absolute):
         QtGui.QGraphicsRectItem.__init__(self, rect)
         self.qobject = QtCore.QObject()
         self.graphics_rect = rect
+        self.y_absolute = y_absolute
 
     def rect(self):
         return self.graphics_rect
@@ -16,6 +17,7 @@ class MyMarker(QtGui.QGraphicsRectItem):
         return self.qobject
 
     def paint(self, painter, option, widget):
+        print "Repaint marker"
         qp = QtGui.QPen()
         qp.setBrush(QtGui.QColor(255, 0, 0))
         painter.setPen(qp)
