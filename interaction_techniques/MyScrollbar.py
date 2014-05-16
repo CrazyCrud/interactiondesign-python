@@ -6,6 +6,7 @@ from PyQt4 import QtGui, QtCore
 class MyScrollbar(QtGui.QScrollBar):
     def __init__(self, ui):
         QtGui.QScrollBar.__init__(self)
+        self.setMouseTracking(True)
         self.current_position = 0
         self.current_marker = 0
         self.cursor_pos = 0
@@ -14,6 +15,7 @@ class MyScrollbar(QtGui.QScrollBar):
         self.markers = []
         self.visualizations = {}
         self.ui = ui
+
 
     def mousePressEvent(self, event):
         QtGui.QScrollBar.mousePressEvent(self, event)
@@ -48,26 +50,19 @@ class MyScrollbar(QtGui.QScrollBar):
         self.ui.scene.removeItem(self.visualizations[marker])
         del self.visualizations[marker]
         self.sortMarkers()
-        self.redrawMarkers()
         self.ui.update()
-
-    def redrawMarkers(self):
-        """
-        self.ui.scene.clear()
-        for k, v in self.visualizations.iteritems():
-            self.ui.scene.addRect(v, QtGui.QPen(QtCore.Qt.red),
-                QtGui.QBrush(QtGui.QColor(255, 0, 0)))
-        """
-        pass
 
     def visualizeMarker(self, marker):
         if (self.ui is not None) and (self.ui.scene is not None):
             rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
                 marker + self.cursor_pos.y(), self.rect_visualization_w,
                 self.rect_visualization_h)
+
             self.visualizations[marker] = self.ui.scene.addRect(
                 rect_marker, QtGui.QPen(QtCore.Qt.red),
                 QtGui.QBrush(QtGui.QColor(255, 0, 0)))
+            self.visualizations[marker].setCursor(QtCore.Qt.PointingHandCursor)
+            self.visualizations[marker].setAcceptHoverEvents(True)
 
     def getNextMaker(self):
         next_marker = None
@@ -78,3 +73,11 @@ class MyScrollbar(QtGui.QScrollBar):
                     return next_marker
             next_marker = self.markers[0]
         return next_marker
+
+    def isMarkerClicked(self, pos):
+        value = None
+        for k, v in self.visualizations.iteritems():
+            if v.contains(pos) is True:
+                value = k
+                break
+        return value

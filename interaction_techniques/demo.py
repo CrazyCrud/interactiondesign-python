@@ -52,6 +52,8 @@ class Demo(QtGui.QWidget):
 
         self.scene.addItem(self.panel)
 
+        self.setMouseTracking(True)
+
         box_layout = QtGui.QVBoxLayout()
         box_layout.setContentsMargins(0, 0, 0, 0)
         box_layout.setSpacing(0)
@@ -113,6 +115,16 @@ class Demo(QtGui.QWidget):
             if value is not None:
                 print "Jump to mark ", value
                 self.scroll_bar.setValue(value)
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            absolute_pos = event.pos()
+            absolute_pos.setY(self.scroll_bar.value() + absolute_pos.y())
+            value = self.scroll_bar.isMarkerClicked(absolute_pos)
+            if value is not None:
+                print "Jump to mark ", value
+                self.scroll_bar.setValue(value)
+
 
 def main():
     app = QtGui.QApplication(sys.argv)
