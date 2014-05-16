@@ -81,6 +81,7 @@ class MyScrollbar(QtGui.QScrollBar):
             tmp_rect.saveScreenshot(self.makeScreenshot(), self.ui.scene.sceneRect())
             tmp_rect.setCursor(QtCore.Qt.PointingHandCursor)
             tmp_rect.setAcceptHoverEvents(True)
+            tmp_rect.setZValue(1)
             self.visualizations[marker] = tmp_rect
 
             qobject = self.visualizations[marker].getQObject()
@@ -116,7 +117,7 @@ class MyScrollbar(QtGui.QScrollBar):
 
     def markerEntered(self, marker):
         self.pixmap = self.ui.scene.addPixmap(marker.getScreenshot())
-        self.pixmap.setOffset(0, self.value())
+        self.pixmap.setOffset(self.ui.width() / 2, self.value())
         self.ui.update()
 
     def markerLeft(self):

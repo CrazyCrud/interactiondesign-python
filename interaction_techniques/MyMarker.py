@@ -41,7 +41,7 @@ class MyMarker(QtGui.QGraphicsRectItem):
 
     def saveScreenshot(self, pixmap, rect):
         print "Save screenshot ", pixmap.width()
-        self.pixmap = pixmap.copy(0, 0, rect.width() - self.graphics_rect.width() * 2, rect.height())
+        self.pixmap = pixmap.copy(0, 0, rect.width() / 2, rect.height())
 
     def getScreenshot(self):
         return self.pixmap
