@@ -11,8 +11,8 @@ class MyScrollbar(QtGui.QScrollBar):
         self.current_position = 0
         self.current_marker = 0
         self.cursor_pos = 0
-        self.rect_visualization_w = 36
-        self.rect_visualization_h = 36
+        self.rect_visualization_w = 20
+        self.rect_visualization_h = 20
         self.markers = []
         self.visualizations = {}
         self.ui = ui
@@ -116,7 +116,8 @@ class MyScrollbar(QtGui.QScrollBar):
         return value
 
     def markerEntered(self, marker):
-        self.pixmap = self.ui.scene.addPixmap(marker.getScreenshot())
+        screenshot = marker.getScreenshot()
+        self.pixmap = self.ui.scene.addPixmap(screenshot)
         self.pixmap.setOffset(self.ui.width() / 2, self.value())
         self.ui.update()
 
