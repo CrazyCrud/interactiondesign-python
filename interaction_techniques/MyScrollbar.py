@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtGui, QtCore
-
+from MyMarker import MyMarker
 
 class MyScrollbar(QtGui.QScrollBar):
     def __init__(self, ui):
@@ -57,12 +57,12 @@ class MyScrollbar(QtGui.QScrollBar):
             rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
                 marker + self.cursor_pos.y(), self.rect_visualization_w,
                 self.rect_visualization_h)
-
-            self.visualizations[marker] = self.ui.scene.addRect(
-                rect_marker, QtGui.QPen(QtCore.Qt.red),
-                QtGui.QBrush(QtGui.QColor(255, 0, 0)))
-            self.visualizations[marker].setCursor(QtCore.Qt.PointingHandCursor)
-            self.visualizations[marker].setAcceptHoverEvents(True)
+            tmp_rect = MyMarker(rect_marker)
+            tmp_rect.setCursor(QtCore.Qt.PointingHandCursor)
+            tmp_rect.setAcceptHoverEvents(True)
+            self.visualizations[marker] = tmp_rect
+            self.ui.scene.addItem(self.visualizations[marker])
+            self.ui.update()
 
     def getNextMaker(self):
         next_marker = None
@@ -77,7 +77,7 @@ class MyScrollbar(QtGui.QScrollBar):
     def isMarkerClicked(self, pos):
         value = None
         for k, v in self.visualizations.iteritems():
-            if v.contains(pos) is True:
+            if v.rect().contains(pos) is True:
                 value = k
                 break
         return value
