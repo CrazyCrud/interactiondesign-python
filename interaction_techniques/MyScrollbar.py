@@ -6,6 +6,7 @@ from MyMarker import MyMarker
 class MyScrollbar(QtGui.QScrollBar):
     def __init__(self, ui):
         QtGui.QScrollBar.__init__(self)
+        self.pixmap = QtGui.QLabel()
         self.setMouseTracking(True)
         self.current_position = 0
         self.current_marker = 0
@@ -58,11 +59,22 @@ class MyScrollbar(QtGui.QScrollBar):
                 marker + self.cursor_pos.y(), self.rect_visualization_w,
                 self.rect_visualization_h)
             tmp_rect = MyMarker(rect_marker)
+            tmp_rect.saveScreenshot(self.makeScreenshot(), self.ui.scene.sceneRect())
             tmp_rect.setCursor(QtCore.Qt.PointingHandCursor)
             tmp_rect.setAcceptHoverEvents(True)
             self.visualizations[marker] = tmp_rect
+
+            qobject = self.visualizations[marker].getQObject()
+            self.connect(qobject, QtCore.SIGNAL(
+            "markerEntered"), self.markerEntered)
+            self.connect(qobject, QtCore.SIGNAL(
+            "markerLeft"), self.markerLeft)
+
             self.ui.scene.addItem(self.visualizations[marker])
             self.ui.update()
+
+    def makeScreenshot(self):
+        return QtGui.QPixmap.grabWindow(self.ui.winId())
 
     def getNextMaker(self):
         next_marker = None
@@ -78,6 +90,16 @@ class MyScrollbar(QtGui.QScrollBar):
         value = None
         for k, v in self.visualizations.iteritems():
             if v.rect().contains(pos) is True:
+                self.markerLeft()
                 value = k
                 break
         return value
+
+    def markerEntered(self, marker):
+        self.pixmap = self.ui.scene.addPixmap(marker.getScreenshot())
+        self.pixmap.setOffset(0, self.value())
+        self.ui.update()
+
+    def markerLeft(self):
+        self.ui.scene.removeItem(self.pixmap)
+        self.ui.update()

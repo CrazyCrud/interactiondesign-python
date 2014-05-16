@@ -6,14 +6,16 @@ from PyQt4 import QtGui, QtCore
 class MyMarker(QtGui.QGraphicsRectItem):
     def __init__(self, rect):
         QtGui.QGraphicsRectItem.__init__(self, rect)
-
+        self.qobject = QtCore.QObject()
         self.graphics_rect = rect
 
     def rect(self):
         return self.graphics_rect
 
+    def getQObject(self):
+        return self.qobject
+
     def paint(self, painter, option, widget):
-        print "Paint Marker"
         qp = QtGui.QPen()
         qp.setBrush(QtGui.QColor(255, 0, 0))
         painter.setPen(qp)
@@ -24,14 +26,15 @@ class MyMarker(QtGui.QGraphicsRectItem):
 
     def hoverEnterEvent(self, event):
         QtGui.QGraphicsRectItem.hoverEnterEvent(self, event)
-        print "Hover enter..."
+        self.qobject.emit(QtCore.SIGNAL("markerEntered"), self)
 
     def hoverLeaveEvent(self, event):
         QtGui.QGraphicsRectItem.hoverLeaveEvent(self, event)
-        print "Hover leave..."
+        self.qobject.emit(QtCore.SIGNAL("markerLeft"))
 
-    def saveScreenshot(self):
-        pass
+    def saveScreenshot(self, pixmap, rect):
+        print "Save screenshot ", pixmap.width()
+        self.pixmap = pixmap.copy(0, 0, rect.width() - self.graphics_rect.width() * 2, rect.height())
 
     def getScreenshot(self):
-        pass
+        return self.pixmap
