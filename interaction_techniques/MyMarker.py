@@ -9,6 +9,7 @@ class MyMarker(QtGui.QGraphicsRectItem):
         self.qobject = QtCore.QObject()
         self.graphics_rect = rect
         self.y_absolute = y_absolute
+        self.icon = QtGui.QPixmap("icon.png")
 
     def rect(self):
         return self.graphics_rect
@@ -21,10 +22,14 @@ class MyMarker(QtGui.QGraphicsRectItem):
         qp = QtGui.QPen()
         qp.setBrush(QtGui.QColor(255, 0, 0))
         painter.setPen(qp)
+
         drawing_rect = QtCore.QRect(self.graphics_rect.x(), self.graphics_rect.y(),
             self.graphics_rect.width(), self.graphics_rect.height())
+        """
         painter.fillRect(drawing_rect, QtGui.QColor(255, 0, 0))
         painter.drawRect(drawing_rect)
+        """
+        painter.drawPixmap(drawing_rect, self.icon)
 
     def hoverEnterEvent(self, event):
         QtGui.QGraphicsRectItem.hoverEnterEvent(self, event)

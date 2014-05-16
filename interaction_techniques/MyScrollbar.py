@@ -11,8 +11,8 @@ class MyScrollbar(QtGui.QScrollBar):
         self.current_position = 0
         self.current_marker = 0
         self.cursor_pos = 0
-        self.rect_visualization_w = 12
-        self.rect_visualization_h = 6
+        self.rect_visualization_w = 36
+        self.rect_visualization_h = 36
         self.markers = []
         self.visualizations = {}
         self.ui = ui
