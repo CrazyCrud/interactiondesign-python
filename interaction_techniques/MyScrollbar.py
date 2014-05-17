@@ -32,7 +32,7 @@ class MyScrollbar(QtGui.QScrollBar):
     def updatePosition(self, value):
         self.current_position = value
         print "slider current position", self.current_position
-        print "self.visualizations.iteritems()", len(self.visualizations)
+        #print "self.visualizations.iteritems()", len(self.visualizations)
         for k, v in self.visualizations.iteritems():
             y_relative = self.value() + v.y_absolute * self.ui.height() / self.ui.scene.sceneRect().height()
             #v.graphics_rect.setY(y_relative)
@@ -48,12 +48,11 @@ class MyScrollbar(QtGui.QScrollBar):
                 absoluteY, self.rect_visualization_w,
                 self.counter)
 
-
             print "nextItem", self.visualizations.itervalues().next().y_absolute
             #self.ui.scene.removeItem(self.visualizations.itervalues().next())
             #self.ui.update()
             #self.ui.scene.addItem(self.visualizations.itervalues().next())
-            rect_marker.update()
+            #rect_marker.update()
             self.ui.update()
             v.update(rect_marker)
             print "y_relative", y_relative

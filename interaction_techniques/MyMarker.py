@@ -10,6 +10,8 @@ class MyMarker(QtGui.QGraphicsRectItem):
         self.graphics_rect = rect
         self.y_absolute = y_absolute
         self.icon = QtGui.QPixmap("icon.png")
+        self.positionY = y_absolute;
+        self.counter = 0
 
     def rect(self):
         return self.graphics_rect
@@ -22,8 +24,14 @@ class MyMarker(QtGui.QGraphicsRectItem):
         qp = QtGui.QPen()
         qp.setBrush(QtGui.QColor(255, 0, 0))
         painter.setPen(qp)
+        self.counter += 1
+        print self.graphics_rect.x()
+        print self.graphics_rect.y()
+        print self.graphics_rect.width()
+        print self.graphics_rect.height()
+        print self.positionY
 
-        drawing_rect = QtCore.QRect(self.graphics_rect.x(), self.graphics_rect.y(),
+        drawing_rect = QtCore.QRect(self.graphics_rect.x(), self.counter,
             self.graphics_rect.width(), self.graphics_rect.height())
         """
         painter.fillRect(drawing_rect, QtGui.QColor(255, 0, 0))
