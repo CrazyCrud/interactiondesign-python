@@ -11,11 +11,12 @@ class MyScrollbar(QtGui.QScrollBar):
         self.current_position = 0
         self.current_marker = 0
         self.cursor_pos = 0
-        self.rect_visualization_w = 20
-        self.rect_visualization_h = 20
+        self.rect_visualization_w = 28
+        self.rect_visualization_h = 28
         self.markers = []
         self.visualizations = {}
         self.ui = ui
+        self.counter = 0;
 
 
     def mousePressEvent(self, event):
@@ -30,15 +31,33 @@ class MyScrollbar(QtGui.QScrollBar):
 
     def updatePosition(self, value):
         self.current_position = value
-
+        print "slider current position", self.current_position
+        print "self.visualizations.iteritems()", len(self.visualizations)
         for k, v in self.visualizations.iteritems():
             y_relative = self.value() + v.y_absolute * self.ui.height() / self.ui.scene.sceneRect().height()
             #v.graphics_rect.setY(y_relative)
-            rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
-                y_relative, self.rect_visualization_w,
-                self.rect_visualization_h)
 
+            #rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
+            #    y_relative, self.rect_visualization_w,
+            #    self.rect_visualization_h)
+
+            self.counter += 1
+            absoluteY = self.visualizations.itervalues().next().y_absolute
+            print self.counter
+            rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
+                absoluteY, self.rect_visualization_w,
+                self.counter)
+
+
+            print "nextItem", self.visualizations.itervalues().next().y_absolute
+            #self.ui.scene.removeItem(self.visualizations.itervalues().next())
+            #self.ui.update()
+            #self.ui.scene.addItem(self.visualizations.itervalues().next())
+            rect_marker.update()
+            self.ui.update()
             v.update(rect_marker)
+            print "y_relative", y_relative
+            print "rect_marker", rect_marker
 
         self.update()
         self.ui.update()
@@ -83,7 +102,7 @@ class MyScrollbar(QtGui.QScrollBar):
             tmp_rect.setAcceptHoverEvents(True)
             tmp_rect.setZValue(1)
             self.visualizations[marker] = tmp_rect
-
+            
             qobject = self.visualizations[marker].getQObject()
             self.connect(qobject, QtCore.SIGNAL(
             "markerEntered"), self.markerEntered)

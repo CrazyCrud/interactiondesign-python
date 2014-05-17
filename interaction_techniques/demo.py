@@ -120,7 +120,7 @@ class Demo(QtGui.QWidget):
 
     def sliderPositionChanged(self, value):
         self.scroll_bar.updatePosition(value)
-        print "Slider position", value
+        #print "Slider position", value
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Space:
