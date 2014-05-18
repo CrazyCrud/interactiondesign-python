@@ -3,6 +3,7 @@
 from PyQt4 import QtGui, QtCore
 from MyMarker import MyMarker
 
+
 class MyScrollbar(QtGui.QScrollBar):
     def __init__(self, ui):
         QtGui.QScrollBar.__init__(self)
@@ -16,7 +17,7 @@ class MyScrollbar(QtGui.QScrollBar):
         self.markers = []
         self.visualizations = {}
         self.ui = ui
-        self.counter = 0;
+        self.counter = 0
 
 
     def mousePressEvent(self, event):
@@ -70,17 +71,18 @@ class MyScrollbar(QtGui.QScrollBar):
             index = None
         if index is None:
             self.markers.append(self.current_position)
-            self.sortMarkers()
+            #self.sortMarkers()
             self.visualizeMarker(self.current_position)
 
     def sortMarkers(self):
-        self.markers.sort(key=int, reverse=True)
+        #self.markers.sort(key=int, reverse=True)
+        return sorted(self.markers, key=int, reverse=True)
 
     def removeMarkers(self, index):
         marker = self.markers.pop(index)
         self.ui.scene.removeItem(self.visualizations[marker])
         del self.visualizations[marker]
-        self.sortMarkers()
+        #self.sortMarkers()
         self.ui.update()
 
     def visualizeMarker(self, marker):
@@ -101,7 +103,7 @@ class MyScrollbar(QtGui.QScrollBar):
             tmp_rect.setAcceptHoverEvents(True)
             tmp_rect.setZValue(1)
             self.visualizations[marker] = tmp_rect
-            
+
             qobject = self.visualizations[marker].getQObject()
             self.connect(qobject, QtCore.SIGNAL(
             "markerEntered"), self.markerEntered)
@@ -114,14 +116,20 @@ class MyScrollbar(QtGui.QScrollBar):
     def makeScreenshot(self):
         return QtGui.QPixmap.grabWindow(self.ui.winId())
 
-    def getNextMaker(self):
+    def getNextMaker(self, index=None):
         next_marker = None
-        if len(self.markers) > 0:
-            for i in range(0, len(self.markers)):
-                if self.markers[i] < self.current_position:
-                    next_marker = self.markers[i]
-                    return next_marker
-            next_marker = self.markers[0]
+        if index is None:
+            markers_asc = self.sortMarkers()
+            if len(markers_asc) > 0:
+                for i in range(0, len(markers_asc)):
+                    if markers_asc[i] < self.current_position:
+                        next_marker = markers_asc[i]
+                        return next_marker
+                next_marker = markers_asc[0]
+        else:
+            index -= 1
+            if index < len(self.markers):
+                next_marker = self.markers[index]
         return next_marker
 
     def isMarkerClicked(self, pos):

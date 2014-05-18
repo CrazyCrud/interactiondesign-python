@@ -123,11 +123,31 @@ class Demo(QtGui.QWidget):
         #print "Slider position", value
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Space:
+        key = event.key()
+        value = None
+        if key == QtCore.Qt.Key_Space:
             value = self.scroll_bar.getNextMaker()
-            if value is not None:
-                print "Jump to mark ", value
-                self.scroll_bar.setValue(value)
+        elif key == QtCore.Qt.Key_1:
+            value = self.scroll_bar.getNextMaker(1)
+        elif key == QtCore.Qt.Key_2:
+            value = self.scroll_bar.getNextMaker(2)
+        elif key == QtCore.Qt.Key_3:
+            value = self.scroll_bar.getNextMaker(3)
+        elif key == QtCore.Qt.Key_4:
+            value = self.scroll_bar.getNextMaker(4)
+        elif key == QtCore.Qt.Key_5:
+            value = self.scroll_bar.getNextMaker(5)
+        elif key == QtCore.Qt.Key_6:
+            value = self.scroll_bar.getNextMaker(6)
+        elif key == QtCore.Qt.Key_7:
+            value = self.scroll_bar.getNextMaker(7)
+        elif key == QtCore.Qt.Key_8:
+            value = self.scroll_bar.getNextMaker(8)
+        elif key == QtCore.Qt.Key_9:
+            value = self.scroll_bar.getNextMaker(9)
+        if value is not None:
+            print "Jump to mark ", value
+            self.scroll_bar.setValue(value)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
