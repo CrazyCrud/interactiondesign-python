@@ -27,8 +27,9 @@ class MyScrollbar(QtGui.QScrollBar):
     def updatePosition(self, value):
         self.current_position = value
 
+        ratio = self.ui.height() / self.ui.scene.sceneRect().height()
         for k, v in self.visualizations.iteritems():
-            y_relative = self.value() + v.y_absolute * (self.ui.height() / self.ui.scene.sceneRect().height())
+            y_relative = self.value() + v.y_absolute * ratio
             value = y_relative - v.rect().y()
             v.setPos(0, value)
             v.update()
@@ -56,7 +57,8 @@ class MyScrollbar(QtGui.QScrollBar):
     def visualizeMarker(self, marker):
         if (self.ui is not None) and (self.ui.scene is not None):
             y_absolute = marker + self.cursor_pos.y()
-            y_relative = self.value() + y_absolute * (self.ui.height() / self.ui.scene.sceneRect().height())
+            ratio = self.ui.height() / self.ui.scene.sceneRect().height()
+            y_relative = self.value() + y_absolute * ratio
 
             rect_marker = QtCore.QRectF(
                 self.ui.window_width - self.rect_visualization_w,
