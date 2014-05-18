@@ -12,13 +12,12 @@ class MyScrollbar(QtGui.QScrollBar):
         self.current_position = 0
         self.current_marker = 0
         self.cursor_pos = 0
-        self.rect_visualization_w = 28
-        self.rect_visualization_h = 28
+        self.rect_visualization_w = 35
+        self.rect_visualization_h = 35
         self.markers = []
         self.visualizations = {}
         self.ui = ui
         self.counter = 0
-
 
     def mousePressEvent(self, event):
         QtGui.QScrollBar.mousePressEvent(self, event)
