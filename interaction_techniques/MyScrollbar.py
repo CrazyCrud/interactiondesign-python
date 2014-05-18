@@ -58,12 +58,14 @@ class MyScrollbar(QtGui.QScrollBar):
             y_absolute = marker + self.cursor_pos.y()
             y_relative = self.value() + y_absolute * (self.ui.height() / self.ui.scene.sceneRect().height())
 
-            rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
+            rect_marker = QtCore.QRectF(
+                self.ui.window_width - self.rect_visualization_w,
                 y_relative, self.rect_visualization_w,
                 self.rect_visualization_h)
 
             tmp_rect = MyMarker(rect_marker, y_absolute)
-            tmp_rect.saveScreenshot(self.makeScreenshot(), self.ui.scene.sceneRect())
+            tmp_rect.saveScreenshot(
+                self.makeScreenshot(), self.ui.scene.sceneRect())
             tmp_rect.setCursor(QtCore.Qt.PointingHandCursor)
             tmp_rect.setAcceptHoverEvents(True)
             tmp_rect.setZValue(1)
@@ -71,9 +73,9 @@ class MyScrollbar(QtGui.QScrollBar):
 
             qobject = self.visualizations[marker].getQObject()
             self.connect(qobject, QtCore.SIGNAL(
-            "markerEntered"), self.markerEntered)
+                "markerEntered"), self.markerEntered)
             self.connect(qobject, QtCore.SIGNAL(
-            "markerLeft"), self.markerLeft)
+                "markerLeft"), self.markerLeft)
 
             self.ui.scene.addItem(self.visualizations[marker])
             self.ui.update()
@@ -101,12 +103,8 @@ class MyScrollbar(QtGui.QScrollBar):
         value = None
         for k, v in self.visualizations.iteritems():
             tmp_pos = QtCore.QPoint(0, 0)
-            print "Rect offset: ", v.y()
-            print "Rect X: ", v.rect().x()
-            print "Rect Y: ", v.rect().y()
             tmp_pos.setX(pos.x())
             tmp_pos.setY(pos.y() + (v.y() * -1))
-            print "Mouse pos: ", tmp_pos
             if v.rect().contains(tmp_pos) is True:
                 self.markerLeft()
                 value = k
@@ -115,8 +113,8 @@ class MyScrollbar(QtGui.QScrollBar):
 
     def markerEntered(self, marker):
         screenshot = marker.getScreenshot()
-        self.overlay = self.ui.scene.addRect(QtCore.QRectF
-            (0, self.current_position, self.ui.width(), self.ui.height()),
+        self.overlay = self.ui.scene.addRect(QtCore.QRectF(
+            0, self.current_position, self.ui.width(), self.ui.height()),
             pen=QtGui.QPen(QtCore.Qt.NoPen),
             brush=QtGui.QBrush(QtGui.QColor(200, 200, 200, alpha=194)))
         self.pixmap = self.ui.scene.addPixmap(screenshot)

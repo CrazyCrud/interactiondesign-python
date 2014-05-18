@@ -18,7 +18,8 @@ class MyMarker(QtGui.QGraphicsRectItem):
         return self.qobject
 
     def paint(self, painter, option, widget):
-        drawing_rect = QtCore.QRect(self.graphics_rect.x(), self.graphics_rect.y(),
+        drawing_rect = QtCore.QRect(
+            self.graphics_rect.x(), self.graphics_rect.y(),
             self.graphics_rect.width(), self.graphics_rect.height())
         painter.drawPixmap(drawing_rect, self.icon)
 
