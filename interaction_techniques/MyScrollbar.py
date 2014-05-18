@@ -23,46 +23,15 @@ class MyScrollbar(QtGui.QScrollBar):
     def mousePressEvent(self, event):
         QtGui.QScrollBar.mousePressEvent(self, event)
         self.cursor_pos = event.pos()
-        """
-        if event.button() == QtCore.Qt.RightButton:
-            self.emit(QtCore.SIGNAL("scrollbarPressed"))
-        else:
-            QtGui.QScrollBar.mousePressEvent(self, event)
-        """
 
     def updatePosition(self, value):
         self.current_position = value
-        """
-        print "slider current position", self.current_position
-        #print "self.visualizations.iteritems()", len(self.visualizations)
+
         for k, v in self.visualizations.iteritems():
-            y_relative = self.value() + v.y_absolute * self.ui.height() / self.ui.scene.sceneRect().height()
-            #v.graphics_rect.setY(y_relative)
-
-            #rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
-            #    y_relative, self.rect_visualization_w,
-            #    self.rect_visualization_h)
-
-            self.counter += 1
-            absoluteY = self.visualizations.itervalues().next().y_absolute
-            print self.counter
-            rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
-                absoluteY, self.rect_visualization_w,
-                self.counter)
-
-            print "nextItem", self.visualizations.itervalues().next().y_absolute
-            #self.ui.scene.removeItem(self.visualizations.itervalues().next())
-            #self.ui.update()
-            #self.ui.scene.addItem(self.visualizations.itervalues().next())
-            #rect_marker.update()
-            self.ui.update()
-            v.update(rect_marker)
-            print "y_relative", y_relative
-            print "rect_marker", rect_marker
-
-        self.update()
-        self.ui.update()
-        """
+            y_relative = self.value() + v.y_absolute * (self.ui.height() / self.ui.scene.sceneRect().height())
+            value = y_relative - v.rect().y()
+            v.setPos(0, value)
+            v.update()
 
     def setMarker(self):
         index = None
@@ -87,13 +56,10 @@ class MyScrollbar(QtGui.QScrollBar):
     def visualizeMarker(self, marker):
         if (self.ui is not None) and (self.ui.scene is not None):
             y_absolute = marker + self.cursor_pos.y()
-            y_relative = self.value() + y_absolute * self.ui.height() / self.ui.scene.sceneRect().height()
-
-            print "Relative y position: ", y_relative
-            print "Absolute y position: ", y_absolute
+            y_relative = self.value() + y_absolute * (self.ui.height() / self.ui.scene.sceneRect().height())
 
             rect_marker = QtCore.QRectF(self.ui.window_width - self.rect_visualization_w,
-                y_absolute, self.rect_visualization_w,
+                y_relative, self.rect_visualization_w,
                 self.rect_visualization_h)
 
             tmp_rect = MyMarker(rect_marker, y_absolute)
@@ -134,7 +100,14 @@ class MyScrollbar(QtGui.QScrollBar):
     def isMarkerClicked(self, pos):
         value = None
         for k, v in self.visualizations.iteritems():
-            if v.rect().contains(pos) is True:
+            tmp_pos = QtCore.QPoint(0, 0)
+            print "Rect offset: ", v.y()
+            print "Rect X: ", v.rect().x()
+            print "Rect Y: ", v.rect().y()
+            tmp_pos.setX(pos.x())
+            tmp_pos.setY(pos.y() + (v.y() * -1))
+            print "Mouse pos: ", tmp_pos
+            if v.rect().contains(tmp_pos) is True:
                 self.markerLeft()
                 value = k
                 break
