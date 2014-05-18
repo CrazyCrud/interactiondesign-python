@@ -89,7 +89,7 @@ class Demo(QtGui.QWidget):
         for i in range(0, items):
             text_passage = MyTextPassage(self.placeholders[randint(
                 0, len(self.placeholders) - 1)],
-                "#" + str(i + 1) +  "Quote", self.window_width, font)
+                "#" + str(i + 1), self.window_width, font)
 
             inline_box.addItem(text_passage)
 
@@ -120,7 +120,6 @@ class Demo(QtGui.QWidget):
 
     def sliderPositionChanged(self, value):
         self.scroll_bar.updatePosition(value)
-        #print "Slider position", value
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -146,7 +145,6 @@ class Demo(QtGui.QWidget):
         elif key == QtCore.Qt.Key_9:
             value = self.scroll_bar.getNextMaker(9)
         if value is not None:
-            print "Jump to mark ", value
             self.scroll_bar.setValue(value)
 
     def mousePressEvent(self, event):
@@ -155,7 +153,6 @@ class Demo(QtGui.QWidget):
             absolute_pos.setY(self.scroll_bar.value() + absolute_pos.y())
             value = self.scroll_bar.isMarkerClicked(absolute_pos)
             if value is not None:
-                print "Jump to mark ", value
                 self.scroll_bar.setValue(value)
 
 

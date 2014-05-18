@@ -8,6 +8,7 @@ class MyScrollbar(QtGui.QScrollBar):
     def __init__(self, ui):
         QtGui.QScrollBar.__init__(self)
         self.pixmap = QtGui.QLabel()
+        self.overlay = None
         self.setMouseTracking(True)
         self.current_position = 0
         self.current_marker = 0
@@ -31,6 +32,7 @@ class MyScrollbar(QtGui.QScrollBar):
 
     def updatePosition(self, value):
         self.current_position = value
+        """
         print "slider current position", self.current_position
         #print "self.visualizations.iteritems()", len(self.visualizations)
         for k, v in self.visualizations.iteritems():
@@ -60,6 +62,7 @@ class MyScrollbar(QtGui.QScrollBar):
 
         self.update()
         self.ui.update()
+        """
 
     def setMarker(self):
         index = None
@@ -70,18 +73,15 @@ class MyScrollbar(QtGui.QScrollBar):
             index = None
         if index is None:
             self.markers.append(self.current_position)
-            #self.sortMarkers()
             self.visualizeMarker(self.current_position)
 
     def sortMarkers(self):
-        #self.markers.sort(key=int, reverse=True)
         return sorted(self.markers, key=int, reverse=True)
 
     def removeMarkers(self, index):
         marker = self.markers.pop(index)
         self.ui.scene.removeItem(self.visualizations[marker])
         del self.visualizations[marker]
-        #self.sortMarkers()
         self.ui.update()
 
     def visualizeMarker(self, marker):
@@ -142,10 +142,15 @@ class MyScrollbar(QtGui.QScrollBar):
 
     def markerEntered(self, marker):
         screenshot = marker.getScreenshot()
+        self.overlay = self.ui.scene.addRect(QtCore.QRectF
+            (0, self.current_position, self.ui.width(), self.ui.height()),
+            pen=QtGui.QPen(QtCore.Qt.NoPen),
+            brush=QtGui.QBrush(QtGui.QColor(200, 200, 200, alpha=194)))
         self.pixmap = self.ui.scene.addPixmap(screenshot)
         self.pixmap.setOffset(self.ui.width() / 2, self.value())
         self.ui.update()
 
     def markerLeft(self):
+        self.ui.scene.removeItem(self.overlay)
         self.ui.scene.removeItem(self.pixmap)
         self.ui.update()

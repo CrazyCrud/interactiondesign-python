@@ -10,7 +10,7 @@ class MyMarker(QtGui.QGraphicsRectItem):
         self.graphics_rect = rect
         self.y_absolute = y_absolute
         self.icon = QtGui.QPixmap("icon.png")
-        self.positionY = y_absolute;
+        self.positionY = y_absolute
         self.counter = 0
 
     def rect(self):
@@ -20,18 +20,18 @@ class MyMarker(QtGui.QGraphicsRectItem):
         return self.qobject
 
     def paint(self, painter, option, widget):
-        print "Repaint marker"
-        qp = QtGui.QPen()
-        qp.setBrush(QtGui.QColor(255, 0, 0))
-        painter.setPen(qp)
+        print "Paint marker"
+        #qp = QtGui.QPen()
+        #qp.setBrush(QtGui.QColor(255, 0, 0))
+        #painter.setPen(qp)
         self.counter += 1
-        print self.graphics_rect.x()
-        print self.graphics_rect.y()
-        print self.graphics_rect.width()
-        print self.graphics_rect.height()
+        print "Drawing rect X:", self.graphics_rect.x()
+        print "Drawing rect Y:", self.graphics_rect.y()
+        print "Drawing rect Width:", self.graphics_rect.width()
+        print "Drawing rect Height:", self.graphics_rect.height()
         print self.positionY
 
-        drawing_rect = QtCore.QRect(self.graphics_rect.x(), self.counter,
+        drawing_rect = QtCore.QRect(self.graphics_rect.x(), self.graphics_rect.y(),
             self.graphics_rect.width(), self.graphics_rect.height())
         """
         painter.fillRect(drawing_rect, QtGui.QColor(255, 0, 0))
@@ -48,7 +48,6 @@ class MyMarker(QtGui.QGraphicsRectItem):
         self.qobject.emit(QtCore.SIGNAL("markerLeft"))
 
     def saveScreenshot(self, pixmap, rect):
-        print "Save screenshot ", pixmap.width()
         self.pixmap = pixmap.copy(0, 0, rect.width() / 2, rect.height())
 
     def getScreenshot(self):
