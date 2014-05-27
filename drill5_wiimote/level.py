@@ -4,13 +4,13 @@ import time
 import math
 
 
-class Demo(object):
-
+class Level(object):
 
     def __init__(self):
-        raw_input("Press the 'sync' button on the back of your Wiimote Plus " +
-        "or buttons (1) and (2) on your classic Wiimote.\n" +
-        "Press <return> once the Wiimote's LEDs start blinking.")
+        raw_input(
+            "Press the 'sync' button on the back of your Wiimote Plus " +
+            "or buttons (1) and (2) on your classic Wiimote.\n" +
+            "Press <return> once the Wiimote's LEDs start blinking.")
 
         self.axis = None
         self.straightAngle = 500
@@ -23,17 +23,15 @@ class Demo(object):
             name = None
         elif len(sys.argv) == 3:
             addr, name = sys.argv[1:3]
-        print("Connecting to %s (%s)" % (name, addr))
+
         self.wm = wiimote.connect(addr, name)
 
         while True:
             if self.wm.buttons["Up"] or self.wm.buttons["Down"]:
                 self.axis = 1
-                #wm.leds[0] = True
             elif self.wm.buttons["Right"] or self.wm.buttons["Left"]:
                 self.axis = 0
             else:
-                #wm.leds[0] = False
                 pass
 
             if self.axis is not None:
@@ -42,10 +40,9 @@ class Demo(object):
             time.sleep(0.05)
 
     def checkAngle(self):
-        print self.axis
         leds = []
         angle = self.wm.accelerometer._state[self.axis]
-        #turn right/down
+
         if angle == self.straightAngle:
             self.wm.rumble()
             leds = [True, True, True, True]
@@ -54,10 +51,7 @@ class Demo(object):
                 leds = [False, False, True, True]
             else:
                 leds = [False, False, True, False]
-        #turn left/up
         elif angle - self.straightAngle < 0:
-            print angle
-            print math.fabs(angle - self.straightAngle)
             if math.fabs(angle - self.straightAngle) > self.treshold:
                 leds = [True, True, False, False]
             else:
@@ -67,7 +61,7 @@ class Demo(object):
 
 
 def main():
-    demo = Demo()
+    level = Level()
 
 if __name__ == '__main__':
     main()
