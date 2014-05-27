@@ -6,7 +6,6 @@ import math
 
 class Demo(object):
 
-
     def __init__(self):
         raw_input("Press the 'sync' button on the back of your Wiimote Plus " +
         "or buttons (1) and (2) on your classic Wiimote.\n" +
@@ -28,12 +27,12 @@ class Demo(object):
 
         while True:
             if self.wm.buttons["Up"] or self.wm.buttons["Down"]:
+                print "Use y-axis"
                 self.axis = 1
-                #wm.leds[0] = True
             elif self.wm.buttons["Right"] or self.wm.buttons["Left"]:
+                print "Use x-axis"
                 self.axis = 0
             else:
-                #wm.leds[0] = False
                 pass
 
             if self.axis is not None:
@@ -42,27 +41,24 @@ class Demo(object):
             time.sleep(0.05)
 
     def checkAngle(self):
-        print self.axis
         leds = []
         angle = self.wm.accelerometer._state[self.axis]
-        #turn right/down
         if angle == self.straightAngle:
             self.wm.rumble()
             leds = [True, True, True, True]
         elif angle - self.straightAngle > 0:
+            #on right/down side
             if math.fabs(angle - self.straightAngle) > self.treshold:
                 leds = [False, False, True, True]
             else:
                 leds = [False, False, True, False]
-        #turn left/up
         elif angle - self.straightAngle < 0:
-            print angle
-            print math.fabs(angle - self.straightAngle)
+            #on left/up side
             if math.fabs(angle - self.straightAngle) > self.treshold:
                 leds = [True, True, False, False]
             else:
                 leds = [False, True, False, False]
-
+        #turn leds on
         self.wm.set_leds(leds)
 
 
