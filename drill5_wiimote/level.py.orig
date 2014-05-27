@@ -4,7 +4,11 @@ import time
 import math
 
 
+<<<<<<< HEAD
+class Demo(object):
+=======
 class Level(object):
+>>>>>>> cd7c9138ff183096705c038d079a6ee41ccdf725
 
     def __init__(self):
         raw_input(
@@ -44,6 +48,10 @@ class Level(object):
     def checkAngle(self):
         leds = []
         angle = self.wm.accelerometer._state[self.axis]
+<<<<<<< HEAD
+=======
+
+>>>>>>> cd7c9138ff183096705c038d079a6ee41ccdf725
         if angle == self.straightAngle:
             self.wm.rumble()
             leds = [True, True, True, True]
@@ -54,7 +62,10 @@ class Level(object):
             else:
                 leds = [False, False, True, False]
         elif angle - self.straightAngle < 0:
+<<<<<<< HEAD
             #on left/up side
+=======
+>>>>>>> cd7c9138ff183096705c038d079a6ee41ccdf725
             if math.fabs(angle - self.straightAngle) > self.treshold:
                 leds = [True, True, False, False]
             else:
