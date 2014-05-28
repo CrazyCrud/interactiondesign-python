@@ -17,7 +17,7 @@ class Level(object):
         self.treshold = 50
 
         if len(sys.argv) == 1:
-            addr, name = find()[0]
+            addr, name = wiimote.find()[0]
         elif len(sys.argv) == 2:
             addr = sys.argv[1]
             name = None
@@ -48,18 +48,15 @@ class Level(object):
             self.wm.rumble()
             leds = [True, True, True, True]
         elif angle - self.straightAngle > 0:
-            #on right/down side
             if math.fabs(angle - self.straightAngle) > self.treshold:
                 leds = [False, False, True, True]
             else:
                 leds = [False, False, True, False]
         elif angle - self.straightAngle < 0:
-            #on left/up side
             if math.fabs(angle - self.straightAngle) > self.treshold:
                 leds = [True, True, False, False]
             else:
                 leds = [False, True, False, False]
-        #turn leds on
         self.wm.set_leds(leds)
 
 
