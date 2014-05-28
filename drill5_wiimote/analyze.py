@@ -26,16 +26,19 @@ class Demo(pyqtgraph.GraphicsLayoutWidget):
         self.x_plot.setTitle("The X Accelerometer")
         self.x_plot.setMenuEnabled(False)
         self.x_plot.setClipToView(True)
+        self.x_plot.hideAxis('bottom')
         self.nextRow()
         self.y_plot = self.addPlot()
         self.y_plot.setTitle("The Y Accelerometer")
         self.y_plot.setMenuEnabled(False)
         self.y_plot.setClipToView(True)
+        self.x_plot.hideAxis('bottom')
         self.nextRow()
         self.z_plot = self.addPlot()
         self.z_plot.setTitle("The Z Accelerometer")
         self.z_plot.setMenuEnabled(False)
         self.z_plot.setClipToView(True)
+        self.z_plot.hideAxis('bottom')
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
