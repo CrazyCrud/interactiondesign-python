@@ -1,8 +1,38 @@
-import wiimote
+#import wiimote
+import sys
+import numpy
+import pyqtgraph
+from PyQt4 import QtGui, QtCore
 
 
 def main():
-    node = WiimoteNode()
+    app = QtGui.QApplication(sys.argv)
+    demo = Demo()
+    demo.show()
+    sys.exit(app.exec_())
+
+
+class Demo(pyqtgraph.GraphicsLayoutWidget):
+    def __init__(self, parent=None):
+        super(Demo, self).__init__()
+        self.node = WiimoteNode()
+
+        self.setWindowTitle("Plotting the Wiimote")
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.showFullScreen()
+
+        self.x_plot = self.addPlot()
+        self.x_plot.setTitle("The X Accelerometer")
+        self.nextRow()
+        self.y_plot = self.addPlot()
+        self.y_plot.setTitle("The Y Accelerometer")
+        self.nextRow()
+        self.z_plot = self.addPlot()
+        self.z_plot.setTitle("The Z Accelerometer")
+
+    def keyPressEvent(self, ev):
+        if ev.key() == QtCore.Qt.Key_Escape:
+            self.close()
 
 
 class WiimoteNode(object):
