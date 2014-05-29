@@ -46,8 +46,12 @@ class Demo(QtGui.QWidget):
         self.setLayout(layout)
 
         self.flowchart = Flowchart(terminals={
-            'dataIn': {'io': 'in'},
-            'dataOut': {'io': 'out'}
+            'xDataIn': {'io': 'in'},
+            'yDataIn': {'io': 'in'},
+            'zDataIn': {'io': 'in'},
+            'xDataOut': {'io': 'out'},
+            'yDataOut': {'io': 'out'},
+            'zDataOut': {'io': 'out'}
         })
 
         layout.addWidget(self.flowchart.widget(), 0, 0, 3, 1)
@@ -107,6 +111,74 @@ class Demo(QtGui.QWidget):
         self.z_plot_filtered.getPlotItem().hideAxis('bottom')
         self.z_plot_filtered.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
 
+        x_plot_raw_node = self.flowchart.createNode(
+            'PlotWidget', pos=(-450, -350))
+        x_plot_raw_node.setPlot(self.x_plot_raw)
+        x_plot_filtered_node = self.flowchart.createNode(
+            'PlotWidget', pos=(-300, -350))
+        x_plot_filtered_node.setPlot(self.x_plot_filtered)
+
+        y_plot_raw_node = self.flowchart.createNode(
+            'PlotWidget', pos=(-150, -350))
+        y_plot_raw_node.setPlot(self.y_plot_raw)
+        y_plot_filtered_node = self.flowchart.createNode(
+            'PlotWidget', pos=(0, -350))
+        y_plot_filtered_node.setPlot(self.y_plot_filtered)
+
+        z_plot_raw_node = self.flowchart.createNode(
+            'PlotWidget', pos=(150, -350))
+        z_plot_raw_node.setPlot(self.z_plot_raw)
+        z_plot_filtered_node = self.flowchart.createNode(
+            'PlotWidget', pos=(300, -350))
+        z_plot_filtered_node.setPlot(self.z_plot_filtered)
+
+        filter_x_node = self.flowchart.createNode(
+            'GaussianFilter', pos=(-375, -150))
+        filter_x_node.ctrls['sigma'].setValue(5)
+        filter_y_node = self.flowchart.createNode(
+            'GaussianFilter', pos=(-75, -150))
+        filter_y_node.ctrls['sigma'].setValue(5)
+        filter_z_node = self.flowchart.createNode(
+            'GaussianFilter', pos=(225, -150))
+        filter_z_node.ctrls['sigma'].setValue(5)
+
+        # placeholder data
+        data = numpy.random.normal(size=1000)
+        data[200:300] += 1
+        data += numpy.sin(numpy.linspace(0, 100, 1000))
+
+        self.flowchart.setInput(xDataIn=data)
+        self.flowchart.setInput(yDataIn=data)
+        self.flowchart.setInput(zDataIn=data)
+
+        self.flowchart.connectTerminals(
+            self.flowchart['xDataIn'], x_plot_raw_node['In'])
+        self.flowchart.connectTerminals(
+            self.flowchart['yDataIn'], y_plot_raw_node['In'])
+        self.flowchart.connectTerminals(
+            self.flowchart['zDataIn'], z_plot_raw_node['In'])
+
+        self.flowchart.connectTerminals(
+            self.flowchart['xDataIn'], filter_x_node['In'])
+        self.flowchart.connectTerminals(
+            self.flowchart['yDataIn'], filter_y_node['In'])
+        self.flowchart.connectTerminals(
+            self.flowchart['zDataIn'], filter_z_node['In'])
+
+        self.flowchart.connectTerminals(
+            filter_x_node['Out'], x_plot_filtered_node['In'])
+        self.flowchart.connectTerminals(
+            filter_y_node['Out'], y_plot_filtered_node['In'])
+        self.flowchart.connectTerminals(
+            filter_z_node['Out'], z_plot_filtered_node['In'])
+
+        self.flowchart.connectTerminals(
+            filter_x_node['Out'], self.flowchart['xDataOut'])
+        self.flowchart.connectTerminals(
+            filter_y_node['Out'], self.flowchart['yDataOut'])
+        self.flowchart.connectTerminals(
+            filter_z_node['Out'], self.flowchart['zDataOut'])
+
     def add(self, x, y, z):
         self.node.add(x, y, z)
 
@@ -139,11 +211,14 @@ class WiimoteNode(object):
         self.values['y'].append(y)
         self.values['z'].append(z)
 
-    def get(self):
-        if len(self.values['x']) == 0:
-            return None
-        else:
-            return self.values
+    def getX(self):
+        return self.values['x']
+
+    def getY(self):
+        return self.values['y']
+
+    def getZ(self):
+        return self.values['z']
 
 if __name__ == "__main__":
     main()
