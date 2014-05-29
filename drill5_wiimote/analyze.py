@@ -3,7 +3,8 @@ import sys
 import time
 from random import randint
 import numpy
-from pyqtgraph.flowchart import Flowchart
+from pyqtgraph.flowchart import Flowchart, Node
+from pyqtgraph.flowchart.library.common import CtrlNode
 import pyqtgraph
 from PyQt4 import QtGui, QtCore
 
@@ -17,7 +18,7 @@ def main():
     """
     while True:
         demo.add(randint(0, 100), randint(0, 100), randint(0, 100))
-        #demo.drawPlots()
+        #demo.updateValues()
         time.sleep(0.05)
     """
     sys.exit(app.exec_())
@@ -37,7 +38,7 @@ def getWiimote():
 class Demo(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Demo, self).__init__()
-        self.node = WiimoteNode()
+        #self.node = WiimoteNode()
 
         self.setWindowTitle("Plotting the Wiimote")
         self.showFullScreen()
@@ -179,24 +180,49 @@ class Demo(QtGui.QWidget):
         self.flowchart.connectTerminals(
             filter_z_node['Out'], self.flowchart['zDataOut'])
 
-    def add(self, x, y, z):
-        self.node.add(x, y, z)
-
-    def drawPlots(self):
-        values = self.node.get()
-        if values is None:
-            return
-        else:
-            self.x_plot_raw.plot(values['x'], clear=True)
-            self.y_plot_raw.plot(values['y'], clear=True)
-            self.z_plot_raw.plot(values['z'], clear=True)
-            pyqtgraph.QtGui.QApplication.processEvents()
+    def updateValues(self, x, y, z):
+        self.flowchart.setInput(xDataIn=x)
+        self.flowchart.setInput(yDataIn=y)
+        self.flowchart.setInput(zDataIn=z)
+        pyqtgraph.QtGui.QApplication.processEvents()
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
 
+class WiimoteNode(Node):
+    nodeName = 'Wiimote'
+
+    def __init__(self, name, n=100):
+        Node.__init__(self, name, terminals={
+            'xDataIn': {'io': 'in'},
+            'yDataIn': {'io': 'in'},
+            'zDataIn': {'io': 'in'},
+            'xDataOut': {'io': 'out'},
+            'yDataOut': {'io': 'out'},
+            'zDataOut': {'io': 'out'}
+        })
+        self.values = {'x': [], 'y': [], 'z': []}
+        self.limit = n
+
+    def process(self, dataIn, display=True):
+        self.add(
+            dataIn['xDataIn'], dataIn['yDataIn'], dataIn['zDataIn'])
+        return {'xDataOut': self.values['x'],
+                'yDataOut': self.values['y'],
+                'zDataOut': self.values['z']}
+
+    def add(self, x, y, z):
+        if len(self.values['x']) > self.limit:
+            self.values['x'].pop(0)
+            self.values['y'].pop(0)
+            self.values['z'].pop(0)
+        self.values['x'].append(x)
+        self.values['y'].append(y)
+        self.values['z'].append(z)
+
+"""
 class WiimoteNode(object):
     def __init__(self, n=100):
         self.values = {'x': [], 'y': [], 'z': []}
@@ -219,6 +245,6 @@ class WiimoteNode(object):
 
     def getZ(self):
         return self.values['z']
-
+"""
 if __name__ == "__main__":
     main()
