@@ -4,7 +4,7 @@ import time
 from random import randint
 import numpy
 from pyqtgraph.flowchart import Flowchart, Node
-from pyqtgraph.flowchart.library.common import CtrlNode
+import pyqtgraph.flowchart.library as fclib
 import pyqtgraph
 from PyQt4 import QtGui, QtCore
 
@@ -15,12 +15,11 @@ def main():
     demo.show()
     # wm = getWiimote()
 
-    """
     while True:
-        demo.add(randint(0, 100), randint(0, 100), randint(0, 100))
-        #demo.updateValues()
+        demo.updateValues(
+            randint(0, 6), randint(0, 6), randint(0, 6))
         time.sleep(0.05)
-    """
+
     sys.exit(app.exec_())
 
 
@@ -64,12 +63,12 @@ class Demo(QtGui.QWidget):
         self.y_plot_filtered = pyqtgraph.PlotWidget()
         self.z_plot_filtered = pyqtgraph.PlotWidget()
 
-        layout.addWidget(self.x_plot_raw, 0, 1, 1, 1)
-        layout.addWidget(self.x_plot_filtered, 0, 2, 1, 1)
-        layout.addWidget(self.y_plot_raw, 1, 1, 1, 1)
-        layout.addWidget(self.y_plot_filtered, 1, 2, 1, 1)
-        layout.addWidget(self.z_plot_raw, 2, 1, 1, 1)
-        layout.addWidget(self.z_plot_filtered, 2, 2, 1, 1)
+        #layout.addWidget(self.x_plot_raw, 0, 1, 1, 1)
+        layout.addWidget(self.x_plot_filtered, 0, 2, 1, 2)
+        #layout.addWidget(self.y_plot_raw, 1, 1, 1, 1)
+        layout.addWidget(self.y_plot_filtered, 1, 2, 1, 2)
+        #layout.addWidget(self.z_plot_raw, 2, 1, 1, 1)
+        layout.addWidget(self.z_plot_filtered, 2, 2, 1, 2)
 
         pyqtgraph.setConfigOptions(antialias=True)
 
@@ -112,6 +111,9 @@ class Demo(QtGui.QWidget):
         self.z_plot_filtered.getPlotItem().hideAxis('bottom')
         self.z_plot_filtered.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
 
+        fclib.registerNodeType(WiimoteNode, [('Display',)])
+        wii_node = self.flowchart.createNode('Wiimote', pos=(0, 0))
+
         x_plot_raw_node = self.flowchart.createNode(
             'PlotWidget', pos=(-450, -350))
         x_plot_raw_node.setPlot(self.x_plot_raw)
@@ -143,28 +145,30 @@ class Demo(QtGui.QWidget):
             'GaussianFilter', pos=(225, -150))
         filter_z_node.ctrls['sigma'].setValue(5)
 
-        # placeholder data
-        data = numpy.random.normal(size=1000)
-        data[200:300] += 1
-        data += numpy.sin(numpy.linspace(0, 100, 1000))
-
-        self.flowchart.setInput(xDataIn=data)
-        self.flowchart.setInput(yDataIn=data)
-        self.flowchart.setInput(zDataIn=data)
+        self.flowchart.setInput(xDataIn=0)
+        self.flowchart.setInput(yDataIn=0)
+        self.flowchart.setInput(zDataIn=0)
 
         self.flowchart.connectTerminals(
-            self.flowchart['xDataIn'], x_plot_raw_node['In'])
+            self.flowchart['xDataIn'], wii_node['xDataIn'])
         self.flowchart.connectTerminals(
-            self.flowchart['yDataIn'], y_plot_raw_node['In'])
+            self.flowchart['yDataIn'], wii_node['yDataIn'])
         self.flowchart.connectTerminals(
-            self.flowchart['zDataIn'], z_plot_raw_node['In'])
+            self.flowchart['zDataIn'], wii_node['zDataIn'])
 
         self.flowchart.connectTerminals(
-            self.flowchart['xDataIn'], filter_x_node['In'])
+            wii_node['xDataOut'], x_plot_raw_node['In'])
         self.flowchart.connectTerminals(
-            self.flowchart['yDataIn'], filter_y_node['In'])
+            wii_node['yDataOut'], y_plot_raw_node['In'])
         self.flowchart.connectTerminals(
-            self.flowchart['zDataIn'], filter_z_node['In'])
+            wii_node['zDataOut'], z_plot_raw_node['In'])
+
+        self.flowchart.connectTerminals(
+            wii_node['xDataOut'], filter_x_node['In'])
+        self.flowchart.connectTerminals(
+            wii_node['yDataOut'], filter_y_node['In'])
+        self.flowchart.connectTerminals(
+            wii_node['zDataOut'], filter_z_node['In'])
 
         self.flowchart.connectTerminals(
             filter_x_node['Out'], x_plot_filtered_node['In'])
@@ -206,9 +210,10 @@ class WiimoteNode(Node):
         self.values = {'x': [], 'y': [], 'z': []}
         self.limit = n
 
-    def process(self, dataIn, display=True):
-        self.add(
-            dataIn['xDataIn'], dataIn['yDataIn'], dataIn['zDataIn'])
+    def process(self, xDataIn, yDataIn, zDataIn, display=True):
+        if xDataIn is not None:
+            self.add(
+                xDataIn, yDataIn, zDataIn)
         return {'xDataOut': self.values['x'],
                 'yDataOut': self.values['y'],
                 'zDataOut': self.values['z']}
