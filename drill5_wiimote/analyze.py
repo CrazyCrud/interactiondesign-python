@@ -3,6 +3,7 @@ import sys
 import time
 from random import randint
 import numpy
+from pyqtgraph.flowchart import Flowchart
 import pyqtgraph
 from PyQt4 import QtGui, QtCore
 
@@ -13,11 +14,12 @@ def main():
     demo.show()
     # wm = getWiimote()
 
+    """
     while True:
         demo.add(randint(0, 100), randint(0, 100), randint(0, 100))
-        demo.drawPlots()
+        #demo.drawPlots()
         time.sleep(0.05)
-
+    """
     sys.exit(app.exec_())
 
 
@@ -32,57 +34,78 @@ def getWiimote():
     return wiimote.connect(addr, name)
 
 
-class Demo(pyqtgraph.GraphicsLayoutWidget):
+class Demo(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Demo, self).__init__()
         self.node = WiimoteNode()
 
         self.setWindowTitle("Plotting the Wiimote")
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.showFullScreen()
+
+        layout = QtGui.QGridLayout()
+        self.setLayout(layout)
+
+        self.flowchart = Flowchart(terminals={
+            'dataIn': {'io': 'in'},
+            'dataOut': {'io': 'out'}
+        })
+
+        layout.addWidget(self.flowchart.widget(), 0, 0, 3, 1)
+
+        self.x_plot_raw = pyqtgraph.PlotWidget()
+        self.y_plot_raw = pyqtgraph.PlotWidget()
+        self.z_plot_raw = pyqtgraph.PlotWidget()
+        self.x_plot_filtered = pyqtgraph.PlotWidget()
+        self.y_plot_filtered = pyqtgraph.PlotWidget()
+        self.z_plot_filtered = pyqtgraph.PlotWidget()
+
+        layout.addWidget(self.x_plot_raw, 0, 1, 1, 1)
+        layout.addWidget(self.x_plot_filtered, 0, 2, 1, 1)
+        layout.addWidget(self.y_plot_raw, 1, 1, 1, 1)
+        layout.addWidget(self.y_plot_filtered, 1, 2, 1, 1)
+        layout.addWidget(self.z_plot_raw, 2, 1, 1, 1)
+        layout.addWidget(self.z_plot_filtered, 2, 2, 1, 1)
+
         pyqtgraph.setConfigOptions(antialias=True)
 
-        self.x_plot_raw = self.addPlot()
-        self.x_plot_raw.setTitle("The X Accelerometer")
-        self.x_plot_raw.setMenuEnabled(False)
-        self.x_plot_raw.setClipToView(False)
-        self.x_plot_raw.hideAxis('bottom')
-        self.x_plot_raw.showGrid(x=True, y=True, alpha=0.5)
-        self.nextColumn()
-        self.x_plot_filtered = self.addPlot()
-        self.x_plot_filtered.setTitle("The X Accelerometer - Filtered")
-        self.x_plot_filtered.setMenuEnabled(False)
-        self.x_plot_filtered.setClipToView(False)
-        self.x_plot_filtered.hideAxis('bottom')
-        self.x_plot_filtered.showGrid(x=True, y=True, alpha=0.5)
-        self.nextRow()
-        self.y_plot_raw = self.addPlot()
-        self.y_plot_raw.setTitle("The Y Accelerometer")
-        self.y_plot_raw.setMenuEnabled(False)
-        self.y_plot_raw.setClipToView(False)
-        self.y_plot_raw.hideAxis('bottom')
-        self.y_plot_raw.showGrid(x=True, y=True, alpha=0.5)
-        self.nextColumn()
-        self.y_plot_filtered = self.addPlot()
-        self.y_plot_filtered.setTitle("The Y Accelerometer - Filtered")
-        self.y_plot_filtered.setMenuEnabled(False)
-        self.y_plot_filtered.setClipToView(False)
-        self.y_plot_filtered.hideAxis('bottom')
-        self.y_plot_filtered.showGrid(x=True, y=True, alpha=0.5)
-        self.nextRow()
-        self.z_plot_raw = self.addPlot()
-        self.z_plot_raw.setTitle("The Z Accelerometer")
-        self.z_plot_raw.setMenuEnabled(False)
-        self.z_plot_raw.setClipToView(False)
-        self.z_plot_raw.hideAxis('bottom')
-        self.z_plot_raw.showGrid(x=True, y=True, alpha=0.5)
-        self.nextColumn()
-        self.z_plot_filtered = self.addPlot()
-        self.z_plot_filtered.setTitle("The Z Accelerometer - Filtered")
-        self.z_plot_filtered.setMenuEnabled(False)
-        self.z_plot_filtered.setClipToView(False)
-        self.z_plot_filtered.hideAxis('bottom')
-        self.z_plot_filtered.showGrid(x=True, y=True, alpha=0.5)
+        self.x_plot_raw.getPlotItem().setTitle("The X Accelerometer")
+        self.x_plot_raw.getPlotItem().setMenuEnabled(False)
+        self.x_plot_raw.getPlotItem().setClipToView(False)
+        self.x_plot_raw.getPlotItem().hideAxis('bottom')
+        self.x_plot_raw.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
+
+        self.x_plot_filtered.getPlotItem().setTitle(
+            "The X Accelerometer - Filtered")
+        self.x_plot_filtered.getPlotItem().setMenuEnabled(False)
+        self.x_plot_filtered.getPlotItem().setClipToView(False)
+        self.x_plot_filtered.getPlotItem().hideAxis('bottom')
+        self.x_plot_filtered.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
+
+        self.y_plot_raw.getPlotItem().setTitle("The Y Accelerometer")
+        self.y_plot_raw.getPlotItem().setMenuEnabled(False)
+        self.y_plot_raw.getPlotItem().setClipToView(False)
+        self.y_plot_raw.getPlotItem().hideAxis('bottom')
+        self.y_plot_raw.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
+
+        self.y_plot_filtered.getPlotItem().setTitle(
+            "The Y Accelerometer - Filtered")
+        self.y_plot_filtered.getPlotItem().setMenuEnabled(False)
+        self.y_plot_filtered.getPlotItem().setClipToView(False)
+        self.y_plot_filtered.getPlotItem().hideAxis('bottom')
+        self.y_plot_filtered.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
+
+        self.z_plot_raw.getPlotItem().setTitle("The Z Accelerometer")
+        self.z_plot_raw.getPlotItem().setMenuEnabled(False)
+        self.z_plot_raw.getPlotItem().setClipToView(False)
+        self.z_plot_raw.getPlotItem().hideAxis('bottom')
+        self.z_plot_raw.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
+
+        self.z_plot_filtered.getPlotItem().setTitle(
+            "The Z Accelerometer - Filtered")
+        self.z_plot_filtered.getPlotItem().setMenuEnabled(False)
+        self.z_plot_filtered.getPlotItem().setClipToView(False)
+        self.z_plot_filtered.getPlotItem().hideAxis('bottom')
+        self.z_plot_filtered.getPlotItem().showGrid(x=True, y=True, alpha=0.5)
 
     def add(self, x, y, z):
         self.node.add(x, y, z)
