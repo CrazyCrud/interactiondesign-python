@@ -23,7 +23,7 @@ class Level(object):
             name = None
         elif len(sys.argv) == 3:
             addr, name = sys.argv[1:3]
-
+        print("Connecting to %s (%s)" % (name, addr))
         self.wm = wiimote.connect(addr, name)
 
         while True:

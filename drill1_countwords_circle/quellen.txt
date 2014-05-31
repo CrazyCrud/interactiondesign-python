@@ -1,0 +1,56 @@
+Manuals zu vielen Befehlen, ansonsten:
+
+wget:
+https://serverfault.com/questions/25779/how-do-i-pipe-a-downloaded-file-to-standard-output-in-bash
+if file exists:
+http://linuxcommand.org/wss0090.php#if
+
+count words program:
+http://franklinchen.com/blog/2011/12/08/revisiting-knuth-and-mcilroys-word-count-programs/
+
+regular expressons:
+http://www.linuxnix.com/2011/07/regular-expressions-linux-i.html
+
+lower case:
+https://stackoverflow.com/questions/4569825/sed-one-liner-to-convert-all-uppercase-to-lowercase
+
+substitute:
+http://wiki.ubuntuusers.de/sed
+
+
+Aufgabe 2:
+Mean
+https://docs.python.org/2/tutorial/stdlib.html?highlight=math%20sum
+
+Median
+http://www.mathsisfun.com/median.html
+
+Standard deviation:
+http://easycalculation.com/statistics/standard-deviation.php
+
+Check for type
+https://stackoverflow.com/questions/152580/whats-the-canonical-way-to-check-for-type-in-python
+
+Read input
+https://en.wikibooks.org/wiki/Python_Programming/Input_and_Output
+
+Split stdin
+https://stackoverflow.com/questions/3464212/how-to-simply-read-in-input-from-stdin-delimited-by-space-or-spaces
+
+Convert str array to int array
+https://stackoverflow.com/questions/7368789/convert-all-strings-in-a-list-to-int
+
+Sys.argv
+https://docs.python.org/2/library/sys.html?highlight=sys.argv#sys.argv
+
+
+Aufgabe 3:
+Turtle Tutorial
+http://interactivepython.org/runestone/static/thinkcspy/PythonTurtle/helloturtle.html
+
+Kreisberechnung
+http://www.arndt-bruenner.de/mathe/9/kreisberechnung.htm
+
+Circle zeichnen
+https://stackoverflow.com/questions/18725917/python-drawing-a-circle-with-x-radius-using-forward
+

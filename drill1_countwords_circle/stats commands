@@ -1,0 +1,3 @@
+cat stats_numbers | python stats.py
+
+python stats.py 29 12 102.2 22.7
