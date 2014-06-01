@@ -1,12 +1,13 @@
 import wiimote
 import sys
 import time
-#from random import randint
-#import numpy
+from random import randint
+import numpy as np
 from pyqtgraph.flowchart import Flowchart, Node
 import pyqtgraph.flowchart.library as fclib
 import pyqtgraph
 from PyQt4 import QtGui, QtCore
+from array import array
 
 
 def main():
@@ -15,10 +16,12 @@ def main():
     demo = Demo()
     demo.show()
 
+    # update wiimote data every few milliseconds
     while True:
         demo.updateValues(
             wm.accelerometer._state[0], wm.accelerometer._state[1], wm.accelerometer._state[2])
-        time.sleep(0.10)
+            #randint(0, 6), randint(0, 6), randint(0, 6))
+        time.sleep(0.20)
 
     sys.exit(app.exec_())
 
@@ -64,10 +67,13 @@ class Demo(QtGui.QWidget):
         self.wii_node = self.flowchart.createNode('Wiimote', pos=(0, 0))
 
         self.axes = ['x', 'y', 'z']
+
+        # positions for all nodes. order:
+        # raw_node x, raw_node y, filtered_node x, filtered_node y, filter_node x, filter_node y
         self.positions = {
             'x': [-450, -350, -300, -350, -375, -150],
             'y': [-150, -350, 0, -350, -75, -150],
-            'z': [150, -350, -300, -350, 225, -150],
+            'z': [150, -350, 300, -350, 225, -150],
         }
 
         # create, style, config and connect the elements for every axis
@@ -95,9 +101,9 @@ class Demo(QtGui.QWidget):
     # create raw, filter and filtered node
     def createNodes(self, axis, plot_raw, plot_filtered):
         # create raw node
-        self.plot_raw_node = self.flowchart.createNode(
-            'PlotWidget', pos=(self.positions[axis][0], self.positions[axis][1]))
-        self.plot_raw_node.setPlot(plot_raw)
+        #self.plot_raw_node = self.flowchart.createNode(
+        #    'PlotWidget', pos=(self.positions[axis][0], self.positions[axis][1]))
+        #self.plot_raw_node.setPlot(plot_raw)
 
         # create filtered node
         self.plot_filtered_node = self.flowchart.createNode(
@@ -114,8 +120,8 @@ class Demo(QtGui.QWidget):
         self.flowchart.connectTerminals(
             self.flowchart[axis + 'DataIn'], self.wii_node[axis + 'DataIn'])
 
-        self.flowchart.connectTerminals(
-            self.wii_node[axis + 'DataOut'], self.plot_raw_node['In'])
+        #self.flowchart.connectTerminals(
+        #    self.wii_node[axis + 'DataOut'], self.plot_raw_node['In'])
 
         self.flowchart.connectTerminals(
             self.wii_node[axis + 'DataOut'], self.filter_node['In'])
