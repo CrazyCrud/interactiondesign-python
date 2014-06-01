@@ -128,8 +128,8 @@ class Demo(QtGui.QWidget):
         self.flowchart.connectTerminals(
             self.filter_node['Out'], self.plot_filtered_node['In'])
 
-        self.flowchart.connectTerminals(
-            self.filter_node['Out'], self.flowchart[axis + 'DataOut'])
+        #self.flowchart.connectTerminals(
+        #    self.filter_node['Out'], self.flowchart[axis + 'DataOut'])
 
     # config plot items
     def configPlotItems(self, axis, plot_raw, plot_filtered):
