@@ -1,7 +1,6 @@
 import wiimote
 import sys
 import time
-#from random import randint
 from pyqtgraph.flowchart import Flowchart, Node
 import pyqtgraph.flowchart.library as fclib
 import pyqtgraph
@@ -20,7 +19,6 @@ def main():
             wm.accelerometer._state[0],
             wm.accelerometer._state[1],
             wm.accelerometer._state[2])
-            #randint(0, 6), randint(0, 6), randint(0, 6))
         time.sleep(0.20)
 
     sys.exit(app.exec_())
@@ -68,9 +66,9 @@ class Demo(QtGui.QWidget):
 
         self.axes = ['x', 'y', 'z']
 
-        # positions for all nodes. order:
-        # raw_node x, raw_node y, filtered_node x, filtered_node y,
-        # filter_node x, filter_node y
+        # positions for all nodes; order:
+        # raw_node xpos, raw_node ypos, filtered_node xpos, filtered_node ypos,
+        # filter_node xpos, filter_node ypos
         self.positions = {
             'x': [-450, -350, -300, -350, -375, -150],
             'y': [-150, -350, 0, -350, -75, -150],
