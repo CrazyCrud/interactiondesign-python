@@ -151,46 +151,13 @@ class WiimoteNode(Node):
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
-        #print self._acc_vals
         x,y,z = self._acc_vals
-        
-        #print x
-        #print testaX[len(testaX)-1]['x']
         
         irXValue = self._ir_vals[len(self._ir_vals)-1]['x']
         irYValue = self._ir_vals[len(self._ir_vals)-1]['y']
-        #irY = self._acc_vals[len(self._acc_vals)-1]['y']
-        #print irX
-        #print irY
-        #testaX = self._ir_vals[-1]['x']
-        #print testaX
-        #print np.array([z])
-        #ir_vals = [float(i) for i in self._ir_vals]
-        #print ir_vals
-        '''
-        if ir_vals != None:
-            irX = cleanedList[-1]
-            irY = self._ir_vals[-1]['y']
-        else:
-            print 'None'
-            #print math.isnan(self._ir_vals)
-        '''
-        #cleanedList = [x for x in _ir_vals if str(x) != 'nan']
-        #print cleanedList
-        #irX = cleanedList[-1]
-        #irY = self._ir_vals[-1]['y']
-        
-        #print irX
-        #for ir_val in _ir_vals:
-        #    print book['book']['title']
-        #irX = self._ir_vals['x']
-        #iry = self._ir_vals['y']
-        #print "irX"+irX
-        #print "irY"+irY
-        #ir = self._ir_vals
+
         return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
                 'irX': np.array([irXValue]), 'irY': np.array([irYValue])}
-        #return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]), 'ir': np.array([ir])}
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
@@ -217,15 +184,28 @@ if __name__ == '__main__':
     layout.addWidget(pw1, 0, 1)
     pw1.setYRange(0,1024)
 
+    pw2 = pg.PlotWidget()
+    layout.addWidget(pw2, 1, 1)
+    pw2.setYRange(0,1024)
+
     pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
     pw1Node.setPlot(pw1)
 
+    pw2Node = fc.createNode('PlotWidget', pos=(0, 150))    
+    pw2Node.setPlot(pw2)
+
     wiimoteNode = fc.createNode('Wiimote', pos=(0, 0), )
-    bufferNode = fc.createNode('Buffer', pos=(150, 0))
+    #bufferNode = fc.createNode('Buffer', pos=(150, 0))
+    bufferNodeX = fc.createNode('Buffer', pos=(150, 0))
+    bufferNodeY = fc.createNode('Buffer', pos=(300, 0))
 
     #fc.connectTerminals(wiimoteNode['accelX'], bufferNode['dataIn'])
-    fc.connectTerminals(wiimoteNode['irX'], bufferNode['dataIn'])
-    fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
+    #fc.connectTerminals(wiimoteNode['irX'], bufferNode['dataIn'])
+    fc.connectTerminals(wiimoteNode['irX'], bufferNodeX['dataIn'])
+    fc.connectTerminals(wiimoteNode['irY'], bufferNodeY['dataIn'])
+    #fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
+    fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
+    fc.connectTerminals(bufferNodeY['dataOut'], pw2Node['In'])
 
     win.show()
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
