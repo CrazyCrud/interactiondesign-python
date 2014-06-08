@@ -8,6 +8,7 @@ import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
+import pdb
 
 import wiimote
 
@@ -59,9 +60,12 @@ class WiimoteNode(Node):
             'accelX': dict(io='out'),
             'accelY': dict(io='out'),
             'accelZ': dict(io='out'),
+            'irX': dict(io='out'),
+            'irY': dict(io='out')
         }
         self.wiimote = None
         self._acc_vals = []
+        self._ir_vals = []
         self.ui = QtGui.QWidget()
         self.layout = QtGui.QGridLayout()
 
@@ -82,19 +86,36 @@ class WiimoteNode(Node):
         self.layout.addWidget(self.connect_button)
         self.ui.setLayout(self.layout)
         self.connect_button.clicked.connect(self.connect_wiimote)
-        self.btaddr = "b8:ae:6e:18:5d:ab" # for ease of use
+        self.btaddr = "B8:AE:6E:50:05:32" # for ease of use
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
 
         Node.__init__(self, name, terminals=terminals)
 
+    def print_ir(self, ir_data):
+        #print''
+        #print len(ir_data)
+        #asd = 1#!!
+        testaX = self._ir_vals
+        #print testaX
+        #if len(testaX) == 1:
+        #    print testaX[0]
+        #elif len(testaX) > 1:
+        #    print testaX[-1]
+        #print testaX[len(testaX)-1]['x']
+        #print testaX[len(testaX)-1]
+        #for ir_obj in ir_data:
+            #print "%4d %4d %2d" % (ir_obj["x"],ir_obj["y"],ir_obj["size"]),
+        #print ir_data[-1]
+        #print "%4d %4d %2d" % (ir_data[-1]["x"],ir_data[-1]["y"],ir_data[-1]["size"])
 
     def update_all_sensors(self):
         if self.wiimote == None:
             return
         self._acc_vals = self.wiimote.accelerometer
         # todo: other sensors...
+        self._ir_vals = self.wiimote.ir
         self.update()
 
     def update_accel(self, acc_vals):
@@ -119,6 +140,7 @@ class WiimoteNode(Node):
             else:
                 self.connect_button.setText("disconnect")
                 self.set_update_rate(self.update_rate_input.value())
+                self.wiimote.ir.register_callback(self.print_ir)
 
     def set_update_rate(self, rate):
         if rate == 0: # use callbacks for max. update rate
@@ -129,8 +151,46 @@ class WiimoteNode(Node):
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
+        #print self._acc_vals
         x,y,z = self._acc_vals
-        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z])}
+        
+        #print x
+        #print testaX[len(testaX)-1]['x']
+        
+        irXValue = self._ir_vals[len(self._ir_vals)-1]['x']
+        irYValue = self._ir_vals[len(self._ir_vals)-1]['y']
+        #irY = self._acc_vals[len(self._acc_vals)-1]['y']
+        #print irX
+        #print irY
+        #testaX = self._ir_vals[-1]['x']
+        #print testaX
+        #print np.array([z])
+        #ir_vals = [float(i) for i in self._ir_vals]
+        #print ir_vals
+        '''
+        if ir_vals != None:
+            irX = cleanedList[-1]
+            irY = self._ir_vals[-1]['y']
+        else:
+            print 'None'
+            #print math.isnan(self._ir_vals)
+        '''
+        #cleanedList = [x for x in _ir_vals if str(x) != 'nan']
+        #print cleanedList
+        #irX = cleanedList[-1]
+        #irY = self._ir_vals[-1]['y']
+        
+        #print irX
+        #for ir_val in _ir_vals:
+        #    print book['book']['title']
+        #irX = self._ir_vals['x']
+        #iry = self._ir_vals['y']
+        #print "irX"+irX
+        #print "irY"+irY
+        #ir = self._ir_vals
+        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
+                'irX': np.array([irXValue]), 'irY': np.array([irYValue])}
+        #return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]), 'ir': np.array([ir])}
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
@@ -163,7 +223,8 @@ if __name__ == '__main__':
     wiimoteNode = fc.createNode('Wiimote', pos=(0, 0), )
     bufferNode = fc.createNode('Buffer', pos=(150, 0))
 
-    fc.connectTerminals(wiimoteNode['accelX'], bufferNode['dataIn'])
+    #fc.connectTerminals(wiimoteNode['accelX'], bufferNode['dataIn'])
+    fc.connectTerminals(wiimoteNode['irX'], bufferNode['dataIn'])
     fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
 
     win.show()
