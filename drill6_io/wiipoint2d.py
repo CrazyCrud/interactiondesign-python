@@ -5,6 +5,8 @@ import sys
 from pyqtgraph.flowchart import Flowchart, Node
 import pyqtgraph.flowchart.library as fclib
 import pyqtgraph
+import pyqtgraph as pg
+import numpy as np
 from PyQt4 import QtGui, QtCore
 
 import wiimote_node
@@ -25,17 +27,27 @@ def main():
 class Demo(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Demo, self).__init__()
+        print 'super'
         self.setWindowTitle("Pointing Device")
-        self.showFullScreen()
+        self.show()
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
+
+        fc = Flowchart(terminals={
+        	'dataIn': {'io': 'in'},
+        	'dataOut': {'io': 'out'}
+    	})
+    	#w = fc.widget()
+
+    	self.layout.addWidget(fc.widget(), 0, 0, 2, 1)
+
         pw1 = pg.PlotWidget()
-        layout.addWidget(pw1, 0, 1)
+        self.layout.addWidget(pw1, 0, 1)
         pw1.setYRange(0,1024)
 
         pw2 = pg.PlotWidget()
-        layout.addWidget(pw2, 1, 1)
+        self.layout.addWidget(pw2, 1, 1)
         pw2.setYRange(0,1024)
 
         pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
@@ -52,34 +64,26 @@ class Demo(QtGui.QWidget):
         fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
         fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
         fc.connectTerminals(bufferNodeY['dataOut'], pw2Node['In'])
-
-        self.getWiimote()
-
-    def getWiimote():
-        addr = ""
-        if len(sys.argv) == 1:
-            addr, name = wiimote.find()[0]
-        elif len(sys.argv) == 2:
-            addr = sys.argv[1]
-            name = None
-        elif len(sys.argv) == 3:
-            addr, name = sys.argv[1:3]
-        self.wiimoteNode.text.setText(addr)
-        self.wiimoteNode.connect_wiimote()
+        print 'connected'
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
     def update(self):
+    	print 'update'
         if self.wiimoteNode.wiimote is None:
+        	#print 'None'
             return
         if self.wiimoteNode.wiimote.buttons['Plus']:
-            pass
+        	print 'Plus'
+            #pass
         elif self.wiimoteNode.wiimote.buttons['Minus']:
-            pass
+        	print 'Minus'
+            #pass
         else:
-            pass
+        	print 'else'
+            #pass
         pyqtgraph.QtGui.QApplication.processEvents()
 
 if __name__ == "__main__":
