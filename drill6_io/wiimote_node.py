@@ -57,9 +57,6 @@ class WiimoteNode(Node):
 
     def __init__(self, name):
         terminals = {
-            'accelX': dict(io='out'),
-            'accelY': dict(io='out'),
-            'accelZ': dict(io='out'),
             'irX': dict(io='out'),
             'irY': dict(io='out')
         }
@@ -93,33 +90,19 @@ class WiimoteNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
-    def print_ir(self, ir_data):
-        #print''
-        #print len(ir_data)
-        #asd = 1#!!
-        testaX = self._ir_vals
-        #print testaX
-        #if len(testaX) == 1:
-        #    print testaX[0]
-        #elif len(testaX) > 1:
-        #    print testaX[-1]
-        #print testaX[len(testaX)-1]['x']
-        #print testaX[len(testaX)-1]
-        #for ir_obj in ir_data:
-            #print "%4d %4d %2d" % (ir_obj["x"],ir_obj["y"],ir_obj["size"]),
-        #print ir_data[-1]
-        #print "%4d %4d %2d" % (ir_data[-1]["x"],ir_data[-1]["y"],ir_data[-1]["size"])
-
     def update_all_sensors(self):
         if self.wiimote == None:
             return
         self._acc_vals = self.wiimote.accelerometer
-        # todo: other sensors...
         self._ir_vals = self.wiimote.ir
         self.update()
 
     def update_accel(self, acc_vals):
         self._acc_vals = acc_vals
+        self.update()
+
+    def update_ir(self, ir_vals):
+        self._ir_vals = ir_vals
         self.update()
 
     def ctrlWidget(self):
@@ -145,22 +128,28 @@ class WiimoteNode(Node):
     def set_update_rate(self, rate):
         if rate == 0: # use callbacks for max. update rate
             self.wiimote.accelerometer.register_callback(self.update_accel)
+            self.wiimote.ir.register_callback(self.update_ir)
             self.update_timer.stop()
         else:
             self.wiimote.accelerometer.unregister_callback(self.update_accel)
+            self.wiimote.ir.unregister_callback(self.update_ir)
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
-        x,y,z = self._acc_vals
-        
-        irXValue = self._ir_vals[len(self._ir_vals)-1]['x']
-        irYValue = self._ir_vals[len(self._ir_vals)-1]['y']
+        ir_rtu = None
+        for ir_value in self._ir_vals:
+            if ir_rtu is None:
+                ir_rtu = ir_value
+            elif ir_value['size'] > ir_rtu['size']:
+                ir_rtu = ir_value
+        irXValue = ir_rtu['x']
+        irYValue = ir_rtu['y']
 
-        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
-                'irX': np.array([irXValue]), 'irY': np.array([irYValue])}
+        return {'irX': np.array([irXValue]), 'irY': np.array([irYValue])}
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
+"""
 if __name__ == '__main__':
     import sys
     app = QtGui.QApplication([])
@@ -191,7 +180,7 @@ if __name__ == '__main__':
     pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
     pw1Node.setPlot(pw1)
 
-    pw2Node = fc.createNode('PlotWidget', pos=(0, 150))    
+    pw2Node = fc.createNode('PlotWidget', pos=(0, 150))
     pw2Node.setPlot(pw2)
 
     wiimoteNode = fc.createNode('Wiimote', pos=(0, 0), )
@@ -210,3 +199,4 @@ if __name__ == '__main__':
     win.show()
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
         QtGui.QApplication.instance().exec_()
+"""
