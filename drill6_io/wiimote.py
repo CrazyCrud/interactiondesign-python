@@ -340,6 +340,7 @@ class IRCam(object):
             size = data[2] & 0b00001111
             if size != 0:
                 self._state.append({'id': ir_obj, 'x': x, 'y': y, 'size': size})
+                print self._state
         self._notify_callbacks()
 
 class Memory(object):

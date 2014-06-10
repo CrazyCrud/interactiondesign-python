@@ -58,7 +58,9 @@ class WiimoteNode(Node):
     def __init__(self, name):
         terminals = {
             'irX': dict(io='out'),
-            'irY': dict(io='out')
+            'irY': dict(io='out'),
+            'irId': dict(io='out'),
+            'irSize': dict(io='out')
         }
         self.wiimote = None
         self._acc_vals = []
@@ -91,6 +93,7 @@ class WiimoteNode(Node):
         Node.__init__(self, name, terminals=terminals)
 
     def update_all_sensors(self):
+        #print 'update_all_sensors'
         if self.wiimote == None:
             return
         self._acc_vals = self.wiimote.accelerometer
@@ -102,6 +105,7 @@ class WiimoteNode(Node):
         self.update()
 
     def update_ir(self, ir_vals):
+        #print 'update_ir'
         self._ir_vals = ir_vals
         self.update()
 
@@ -123,7 +127,7 @@ class WiimoteNode(Node):
             else:
                 self.connect_button.setText("disconnect")
                 self.set_update_rate(self.update_rate_input.value())
-                self.wiimote.ir.register_callback(self.print_ir)
+                self.wiimote.ir.register_callback(self.update_ir)
 
     def set_update_rate(self, rate):
         if rate == 0: # use callbacks for max. update rate
@@ -136,16 +140,22 @@ class WiimoteNode(Node):
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
-        ir_rtu = None
-        for ir_value in self._ir_vals:
-            if ir_rtu is None:
-                ir_rtu = ir_value
-            elif ir_value['size'] > ir_rtu['size']:
-                ir_rtu = ir_value
-        irXValue = ir_rtu['x']
-        irYValue = ir_rtu['y']
+        if len(self._ir_vals) > 0:
+            irXValue = self._ir_vals[len(self._ir_vals)-1]['x']
+            irYValue = self._ir_vals[len(self._ir_vals)-1]['y']
+            irIdValue = self._ir_vals[len(self._ir_vals)-1]['id']
+            irSizeValue = self._ir_vals[len(self._ir_vals)-1]['size']
+        else:
+            irXValue = 0
+            irYValue = 0
+            irIdValue = 0
+            irSizeValue = 0
 
-        return {'irX': np.array([irXValue]), 'irY': np.array([irYValue])}
+        return {
+            'irX': np.array([irXValue]),
+            'irY': np.array([irXValue]),
+            'irId': np.array([irIdValue]),
+            'irSize': np.array([irSizeValue])}
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 

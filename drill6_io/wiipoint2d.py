@@ -27,7 +27,7 @@ def main():
 class Demo(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Demo, self).__init__()
-        print 'super'
+        #print 'super'
         self.setWindowTitle("Pointing Device")
         self.show()
 
@@ -64,26 +64,25 @@ class Demo(QtGui.QWidget):
         fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
         fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
         fc.connectTerminals(bufferNodeY['dataOut'], pw2Node['In'])
-        print 'connected'
+        #print 'connected'
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
     def update(self):
-    	print 'update'
-        if self.wiimoteNode.wiimote is None:
-        	#print 'None'
-            return
-        if self.wiimoteNode.wiimote.buttons['Plus']:
-        	print 'Plus'
-            #pass
-        elif self.wiimoteNode.wiimote.buttons['Minus']:
-        	print 'Minus'
-            #pass
-        else:
-        	print 'else'
-            #pass
+        if self.wiimoteNode.wiimote is not None:
+        	print 'Not None'
+            #return
+	        if self.wiimoteNode.wiimote.buttons['Plus']:
+	        	print 'Plus'
+	            #pass
+	        elif self.wiimoteNode.wiimote.buttons['Minus']:
+	        	print 'Minus'
+	            #pass
+	        else:
+	        	print 'else'
+	            #pass
         pyqtgraph.QtGui.QApplication.processEvents()
 
 if __name__ == "__main__":
