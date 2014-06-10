@@ -149,6 +149,7 @@ class WiimoteNode(Node):
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
+"""
 if __name__ == '__main__':
     import sys
     app = QtGui.QApplication([])
@@ -198,3 +199,4 @@ if __name__ == '__main__':
     win.show()
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
         QtGui.QApplication.instance().exec_()
+"""
