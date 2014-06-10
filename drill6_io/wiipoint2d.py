@@ -38,11 +38,32 @@ class Demo(QtGui.QWidget):
             'dataIn': {'io': 'in'},
             'dataOut': {'io': 'out'}
         })
+        self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
+
         #self.useScatterPlotWidget()
-        self.usePlotWidget()
+        #self.usePlotWidget()
+        self.useColorMapWidget()
+
+    def useColorMapWidget(self):
+        pw1 = pg.ColorMapWidget()
+        self.layout.addWidget(pw1, 0, 1)
+        #http://www.pyqtgraph.org/documentation/widgets/colormapwidget.html
+        #http://www.pyqtgraph.org/documentation/_modules/pyqtgraph/widgets/ColorMapWidget.html
+        #pw1.setFields(['test', {'mode': ..., 'unit': ..., 'values': ... } ])
+        #pw1.map()
+
+        pw1Node = self.fc.createNode('PlotWidget', pos=(0, -150))
+        pw1Node.setPlot(pw1)
+
+        self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
+        bufferNodeX = self.fc.createNode('Buffer', pos=(150, 0))
+        bufferNodeY = self.fc.createNode('Buffer', pos=(300, 0))
+
+        self.fc.connectTerminals(self.wiimoteNode['irX'], bufferNodeX['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
+        self.fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
 
     def useScatterPlotWidget(self):
-        self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
         '''
         n = 300
         scatter1 = pg.ScatterPlotItem(size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
@@ -76,7 +97,6 @@ class Demo(QtGui.QWidget):
 
 
     def usePlotWidget(self):
-        self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
         pw1 = pg.PlotWidget()
         self.layout.addWidget(pw1, 0, 1)
