@@ -14,7 +14,6 @@ def main():
     demo = Demo()
     demo.show()
 
-    # update wiimote data every few milliseconds
     while True:
         demo.update()
 
@@ -68,7 +67,19 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.text.setText(addr)
         self.wiimoteNode.connect_wiimote()
 
+    def keyPressEvent(self, ev):
+        if ev.key() == QtCore.Qt.Key_Escape:
+            self.close()
+
     def update(self):
+        if self.wiimoteNode.wiimote is None:
+            return
+        if self.wiimoteNode.wiimote.buttons['Plus']:
+            pass
+        elif self.wiimoteNode.wiimote.buttons['Minus']:
+            pass
+        else:
+            pass
         pyqtgraph.QtGui.QApplication.processEvents()
 
 if __name__ == "__main__":
