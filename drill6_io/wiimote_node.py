@@ -151,6 +151,8 @@ class WiimoteNode(Node):
             irIdValue = 0
             irSizeValue = 0
 
+        print irIdValue + " " + irXValue + " " + irYValue + " " + irSizeValue
+
         return {
             'irX': np.array([irXValue]),
             'irY': np.array([irXValue]),

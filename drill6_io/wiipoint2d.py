@@ -9,16 +9,19 @@ import pyqtgraph as pg
 import numpy as np
 from PyQt4 import QtGui, QtCore
 
+import wiimote
 import wiimote_node
+
 
 def main():
     app = QtGui.QApplication(sys.argv)
+
+    #wm = getWiimote()
     demo = Demo()
     demo.show()
 
     while True:
         demo.update()
-
         time.sleep(0.20)
 
     sys.exit(app.exec_())
@@ -40,64 +43,24 @@ class Demo(QtGui.QWidget):
         })
         self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
-        #self.useScatterPlotWidget()
-        #self.usePlotWidget()
-        self.useColorMapWidget()
+        wm = self.getWiimote()
 
-    def useColorMapWidget(self):
-        pw1 = pg.ColorMapWidget()
-        self.layout.addWidget(pw1, 0, 1)
-        #http://www.pyqtgraph.org/documentation/widgets/colormapwidget.html
-        #http://www.pyqtgraph.org/documentation/_modules/pyqtgraph/widgets/ColorMapWidget.html
-        #pw1.setFields(['test', {'mode': ..., 'unit': ..., 'values': ... } ])
-        #pw1.map()
+        self.usePlotWidget()
 
-        pw1Node = self.fc.createNode('PlotWidget', pos=(0, -150))
-        pw1Node.setPlot(pw1)
-
-        self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
-        bufferNodeX = self.fc.createNode('Buffer', pos=(150, 0))
-        bufferNodeY = self.fc.createNode('Buffer', pos=(300, 0))
-
-        self.fc.connectTerminals(self.wiimoteNode['irX'], bufferNodeX['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
-        self.fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
-
-    def useScatterPlotWidget(self):
-        '''
-        n = 300
-        scatter1 = pg.ScatterPlotItem(size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
-        pos = np.random.normal(size=(2,n), scale=1e-5)
-        spots = [{'pos': pos[:,i], 'data': 1} for i in range(n)] + [{'pos': [0,0], 'data': 1}]
-        scatter1.addPoints(spots)
-        self.layout.addWidget(scatter1,0,1)
-        #w1.addItem(scatter1)
-        '''
-        pw1 = pg.ScatterPlotWidget()
-        self.layout.addWidget(pw1, 0, 1)
-        '''
-        pw2 = pg.PlotWidget()
-        self.layout.addWidget(pw2, 1, 1)
-        pw2.setYRange(0,1024)
-        '''
-        pw1Node = self.fc.createNode('PlotWidget', pos=(0, -150))
-        pw1Node.setPlot(pw1)
-
-        #pw2Node = self.fc.createNode('ScatterPlotItem', pos=(0, 150))
-        #pw2Node.setPlot(pw2)
-
-        self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
-        bufferNodeX = self.fc.createNode('Buffer', pos=(150, 0))
-        bufferNodeY = self.fc.createNode('Buffer', pos=(300, 0))
-
-        self.fc.connectTerminals(self.wiimoteNode['irX'], bufferNodeX['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
-        self.fc.connectTerminals(bufferNodeX['dataOut'], pw1['In'])
-        #self.fc.connectTerminals(bufferNodeY['dataOut'], pw2Node['In'])
+    def getWiimote(self):
+        if len(sys.argv) == 1:
+            addr, name = wiimote.find()[0]
+        elif len(sys.argv) == 2:
+            addr = sys.argv[1]
+            name = None
+        elif len(sys.argv) == 3:
+            addr, name = sys.argv[1:3]
+        print("Connecting to %s (%s)" % (name, addr))
+        self.wiimote_address = addr
+        return wiimote.connect(addr, name)
 
 
     def usePlotWidget(self):
-
         pw1 = pg.PlotWidget()
         self.layout.addWidget(pw1, 0, 1)
         pw1.setYRange(0,1024)
@@ -113,6 +76,9 @@ class Demo(QtGui.QWidget):
         pw2Node.setPlot(pw2)
 
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
+        self.wiimoteNode.btaddr = self.wiimote_address
+        self.wiimoteNode.text.setText(self.wiimote_address)
+
         bufferNodeX = self.fc.createNode('Buffer', pos=(150, 0))
         bufferNodeY = self.fc.createNode('Buffer', pos=(300, 0))
 
