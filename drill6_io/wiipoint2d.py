@@ -47,8 +47,6 @@ class Demo(QtGui.QWidget):
 
         self.getWiimote()
 
-
-
     def getWiimote(self):
         if len(sys.argv) == 1:
             addr, name = wiimote.find()[0]
@@ -58,13 +56,11 @@ class Demo(QtGui.QWidget):
         elif len(sys.argv) == 3:
             addr, name = sys.argv[1:3]
         print("Connecting to %s (%s)" % (name, addr))
-        #self.wiimote_address = addr
-        #return wiimote.connect(addr, name)
+
         self.wiimoteNode.text.setText(addr)
         self.wiimoteNode.connect_wiimote()
 
     def usePlotWidget(self):
-        print 'usePlotWidget'
         pw1 = pg.PlotWidget()
         self.layout.addWidget(pw1, 0, 1)
         pw1.setYRange(0, 1024)
@@ -73,29 +69,12 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(pw2, 1, 1)
         pw2.setYRange(0, 1024)
 
-        pointNode = self.fc.createNode('PointVis', pos=(-150, 150))
-
-        #pw1Node = self.fc.createNode('PlotWidget', pos=(150, -150))
-        #pw1Node.setPlot(pw1)
-
-        #pw2Node = self.fc.createNode('PlotWidget', pos=(150, 150))
-        #pw2Node.setPlot(pw2)
-
+        pointVisNode = self.fc.createNode('PointVis', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
-        #self.wiimoteNode.btaddr = self.wiimote_address
-        #self.wiimoteNode.text.setText(self.wiimote_address)
-        #self.wiimoteNode.wiimote = self.wm
-
         bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
-        #bufferNodeY = self.fc.createNode('Buffer', pos=(0, 150))
 
-        #self.fc.connectTerminals(self.wiimoteNode['accelX'], bufferNodeX['dataIn'])
         self.fc.connectTerminals(self.wiimoteNode['irVals'], bufferNode['dataIn'])
-        #self.fc.connectTerminals(self.wiimoteNode['irX'], bufferNodeX['dataIn'])
-        #self.fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
-        #self.fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
-        #self.fc.connectTerminals(bufferNodeY['dataOut'], pw2Node['In'])
-        self.fc.connectTerminals(bufferNode['dataOut'], pointNode['irVals'])
+        self.fc.connectTerminals(bufferNode['dataOut'], pointVisNode['irVals'])
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
