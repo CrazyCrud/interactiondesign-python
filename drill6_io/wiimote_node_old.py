@@ -8,6 +8,7 @@ import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
+import pdb
 
 import wiimote
 
@@ -16,7 +17,7 @@ class BufferNode(CtrlNode):
     """
     Buffers the last n samples provided on input and provides them as a list of
     length n on output.
-    A spinbox widget allows for setting the size of the buffer. 
+    A spinbox widget allows for setting the size of the buffer.
     Default size is 32 samples.
     """
     nodeName = "Buffer"
@@ -26,40 +27,44 @@ class BufferNode(CtrlNode):
 
     def __init__(self, name):
         terminals = {
-            'dataIn': dict(io='in'),  
-            'dataOut': dict(io='out'), 
+            'dataIn': dict(io='in'),
+            'dataOut': dict(io='out'),
         }
         self._buffer = np.array([])
         CtrlNode.__init__(self, name, terminals=terminals)
-        
+
     def process(self, **kwds):
         size = int(self.ctrls['size'].value())
         self._buffer = np.append(self._buffer, kwds['dataIn'])
         self._buffer = self._buffer[-size:]
         output = self._buffer
+        #print output
         return {'dataOut': output}
 
 fclib.registerNodeType(BufferNode, [('Data',)])
-        
+
 class WiimoteNode(Node):
     """
     Outputs sensor data from a Wiimote.
-    
+
     Supported sensors: accelerometer (3 axis)
-    Text input box allows for setting a Bluetooth MAC address. 
+    Text input box allows for setting a Bluetooth MAC address.
     Pressing the "connect" button tries connecting to the Wiimote.
-    Update rate can be changed via a spinbox widget. Setting it to "0" 
+    Update rate can be changed via a spinbox widget. Setting it to "0"
     activates callbacks everytime a new sensor value arrives (which is
     quite often -> performance hit)
     """
     nodeName = "Wiimote"
-    
+
     def __init__(self, name):
         terminals = {
             'accelX': dict(io='out'),
             'accelY': dict(io='out'),
             'accelZ': dict(io='out'),
-            'irVals': dict(io='out')
+            #'irX': dict(io='out'),
+            #'irY': dict(io='out'),
+            #'irId': dict(io='out'),
+            #'irSize': dict(io='out')
         }
         self.wiimote = None
         self._acc_vals = []
@@ -76,7 +81,7 @@ class WiimoteNode(Node):
         self.update_rate_input = QtGui.QSpinBox()
         self.update_rate_input.setMinimum(0)
         self.update_rate_input.setMaximum(60)
-        self.update_rate_input.setValue(20)
+        self.update_rate_input.setValue(40)
         self.update_rate_input.valueChanged.connect(self.set_update_rate)
         self.layout.addWidget(self.update_rate_input)
 
@@ -88,11 +93,11 @@ class WiimoteNode(Node):
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
-    
+
         Node.__init__(self, name, terminals=terminals)
-        
 
     def update_all_sensors(self):
+        #print 'update_all_sensors'
         if self.wiimote == None:
             return
         self._acc_vals = self.wiimote.accelerometer
@@ -110,14 +115,14 @@ class WiimoteNode(Node):
 
     def ctrlWidget(self):
         return self.ui
-        
+
     def connect_wiimote(self):
         self.btaddr = str(self.text.text()).strip()
         if self.wiimote is not None:
             self.wiimote.disconnect()
             self.wiimote = None
             self.connect_button.setText("connect")
-            return 
+            return
         if len(self.btaddr) == 17 :
             self.connect_button.setText("connecting...")
             self.wiimote = wiimote.connect(self.btaddr)
@@ -126,6 +131,7 @@ class WiimoteNode(Node):
             else:
                 self.connect_button.setText("disconnect")
                 self.set_update_rate(self.update_rate_input.value())
+                self.wiimote.ir.register_callback(self.update_ir)
 
     def set_update_rate(self, rate):
         if rate == 0: # use callbacks for max. update rate
@@ -139,63 +145,41 @@ class WiimoteNode(Node):
 
     def process(self, **kwdargs):
         x,y,z = self._acc_vals
+        
+        #print self._ir_vals
+        '''
+        if len(self._ir_vals) > 0:
+            irXValue = self._ir_vals[len(self._ir_vals)-1]['x']
+            irYValue = self._ir_vals[len(self._ir_vals)-1]['y']
+            irIdValue = self._ir_vals[len(self._ir_vals)-1]['id']
+            irSizeValue = self._ir_vals[len(self._ir_vals)-1]['size']
+            if irXValue is None:
+                irXValue = 0
+            if irYValue is None:
+                irYValue = 0
+            if irIdValue is None:
+                irIdValue = 0
+            if irSizeValue is None:
+                irSizeValue = 0
 
-        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
-            'irVals': np.array(self._ir_vals)}
+        else:
+            irXValue = 0
+            irYValue = 0
+            irIdValue = 0
+            irSizeValue = 0
+        '''
+        return {
+            'accelX': np.array([x]),
+            'accelY': np.array([y]),
+            'accelZ': np.array([z]),
+            #'irX': np.array([irXValue]),
+            #'irY': np.array([irXValue]),
+            #'irId': np.array([irIdValue]),
+            #'irSize': np.array([irSizeValue])
+
+            }
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
-
-class PointVisNode(Node):
-    """
-
-    """
-    nodeName = "PointVis"
-
-    def __init__(self, name):
-        terminals = {
-            'irVals': dict(io='in'),
-            'irX': dict(io='out'),
-            'irY': dict(io='out')
-        }
-        self._ir_vals = []
-
-        Node.__init__(self, name, terminals=terminals)
-
-
-    def update_all_sensors(self):
-        self.update()
-
-    def update_ir(self, ir_vals):
-        self._ir_vals = ir_vals
-        print ir_vals
-        self.update()
-
-    def process(self, irVals):
-        biggest_id = -1
-        biggest_size = -1
-        rtu_values = {}
-
-        for ir in irVals:
-            if ir['size'] > biggest_size:
-                biggest_id = ir['id']
-            if ir['id'] in rtu_values:
-                rtu_values[ir['id']]['x'].append(ir['x'])
-                rtu_values[ir['id']]['y'].append(ir['y'])
-            else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
-
-        avgX = 0
-        avgY = 0
-
-        if biggest_id > -1:
-            xVals = rtu_values[biggest_id]['x']
-            yVals = rtu_values[biggest_id]['y']
-            avgX = float(sum(xVals))/len(xVals) if len(xVals) > 0 else float('nan')
-            avgY = float(sum(yVals))/len(yVals) if len(yVals) > 0 else float('nan')
-
-        return {'irX': np.array([avgX]), 'irY': np.array([avgY])}
-
-fclib.registerNodeType(PointVisNode, [('Sensor',)])
 
 
 if __name__ == '__main__':
@@ -211,7 +195,7 @@ if __name__ == '__main__':
     ## Create an empty flowchart with a single input and output
     fc = Flowchart(terminals={
         'dataIn': {'io': 'in'},
-        'dataOut': {'io': 'out'}    
+        'dataOut': {'io': 'out'}
     })
     w = fc.widget()
 
@@ -219,7 +203,7 @@ if __name__ == '__main__':
 
     pw1 = pg.PlotWidget()
     layout.addWidget(pw1, 0, 1)
-    pw1.setYRange(0,1024)
+    pw1.setYRange(0, 1024)
 
     pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
     pw1Node.setPlot(pw1)

@@ -56,14 +56,12 @@ class WiimoteNode(Node):
     
     def __init__(self, name):
         terminals = {
-            'accelX': dict(io='out'),
-            'accelY': dict(io='out'),
+            'accelX': dict(io='out'),  
+            'accelY': dict(io='out'), 
             'accelZ': dict(io='out'),
-            'irVals': dict(io='out')
         }
         self.wiimote = None
         self._acc_vals = []
-        self._ir_vals = []
         self.ui = QtGui.QWidget()
         self.layout = QtGui.QGridLayout()
 
@@ -84,7 +82,7 @@ class WiimoteNode(Node):
         self.layout.addWidget(self.connect_button)
         self.ui.setLayout(self.layout)
         self.connect_button.clicked.connect(self.connect_wiimote)
-        self.btaddr = "B8:AE:6E:50:05:32" # for ease of use
+        self.btaddr = "b8:ae:6e:18:5d:ab" # for ease of use
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
@@ -96,16 +94,11 @@ class WiimoteNode(Node):
         if self.wiimote == None:
             return
         self._acc_vals = self.wiimote.accelerometer
-        self._ir_vals = self.wiimote.ir
+        # todo: other sensors...
         self.update()
 
     def update_accel(self, acc_vals):
         self._acc_vals = acc_vals
-        self.update()
-
-    def update_ir(self, ir_vals):
-        #print 'update_ir'
-        self._ir_vals = ir_vals
         self.update()
 
     def ctrlWidget(self):
@@ -130,74 +123,17 @@ class WiimoteNode(Node):
     def set_update_rate(self, rate):
         if rate == 0: # use callbacks for max. update rate
             self.wiimote.accelerometer.register_callback(self.update_accel)
-            self.wiimote.ir.register_callback(self.update_ir)
             self.update_timer.stop()
         else:
             self.wiimote.accelerometer.unregister_callback(self.update_accel)
-            self.wiimote.ir.unregister_callback(self.update_ir)
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
         x,y,z = self._acc_vals
-
-        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
-            'irVals': np.array(self._ir_vals)}
-
+        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z])}
+        
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
-
-class PointVisNode(Node):
-    """
-
-    """
-    nodeName = "PointVis"
-
-    def __init__(self, name):
-        terminals = {
-            'irVals': dict(io='in'),
-            'irX': dict(io='out'),
-            'irY': dict(io='out')
-        }
-        self._ir_vals = []
-
-        Node.__init__(self, name, terminals=terminals)
-
-
-    def update_all_sensors(self):
-        self.update()
-
-    def update_ir(self, ir_vals):
-        self._ir_vals = ir_vals
-        print ir_vals
-        self.update()
-
-    def process(self, irVals):
-        biggest_id = -1
-        biggest_size = -1
-        rtu_values = {}
-
-        for ir in irVals:
-            if ir['size'] > biggest_size:
-                biggest_id = ir['id']
-            if ir['id'] in rtu_values:
-                rtu_values[ir['id']]['x'].append(ir['x'])
-                rtu_values[ir['id']]['y'].append(ir['y'])
-            else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
-
-        avgX = 0
-        avgY = 0
-
-        if biggest_id > -1:
-            xVals = rtu_values[biggest_id]['x']
-            yVals = rtu_values[biggest_id]['y']
-            avgX = float(sum(xVals))/len(xVals) if len(xVals) > 0 else float('nan')
-            avgY = float(sum(yVals))/len(yVals) if len(yVals) > 0 else float('nan')
-
-        return {'irX': np.array([avgX]), 'irY': np.array([avgY])}
-
-fclib.registerNodeType(PointVisNode, [('Sensor',)])
-
-
+    
 if __name__ == '__main__':
     import sys
     app = QtGui.QApplication([])
