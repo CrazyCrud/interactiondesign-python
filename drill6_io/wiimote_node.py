@@ -38,6 +38,7 @@ class BufferNode(CtrlNode):
         self._buffer = np.append(self._buffer, kwds['dataIn'])
         self._buffer = self._buffer[-size:]
         output = self._buffer
+        #print output
         return {'dataOut': output}
 
 fclib.registerNodeType(BufferNode, [('Data',)])
@@ -57,6 +58,9 @@ class WiimoteNode(Node):
 
     def __init__(self, name):
         terminals = {
+            #'accelX': dict(io='out'),
+            #'accelY': dict(io='out'),
+            #'accelZ': dict(io='out'),
             'irX': dict(io='out'),
             'irY': dict(io='out'),
             'irId': dict(io='out'),
@@ -77,7 +81,7 @@ class WiimoteNode(Node):
         self.update_rate_input = QtGui.QSpinBox()
         self.update_rate_input.setMinimum(0)
         self.update_rate_input.setMaximum(60)
-        self.update_rate_input.setValue(20)
+        self.update_rate_input.setValue(40)
         self.update_rate_input.valueChanged.connect(self.set_update_rate)
         self.layout.addWidget(self.update_rate_input)
 
@@ -140,28 +144,42 @@ class WiimoteNode(Node):
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
+        #x,y,z = self._acc_vals
+
+        #print self._ir_vals
         if len(self._ir_vals) > 0:
             irXValue = self._ir_vals[len(self._ir_vals)-1]['x']
             irYValue = self._ir_vals[len(self._ir_vals)-1]['y']
             irIdValue = self._ir_vals[len(self._ir_vals)-1]['id']
             irSizeValue = self._ir_vals[len(self._ir_vals)-1]['size']
+            if irXValue is None:
+                irXValue = 0
+            if irYValue is None:
+                irYValue = 0
+            if irIdValue is None:
+                irIdValue = 0
+            if irSizeValue is None:
+                irSizeValue = 0
+
         else:
             irXValue = 0
             irYValue = 0
             irIdValue = 0
             irSizeValue = 0
 
-        print irIdValue + " " + irXValue + " " + irYValue + " " + irSizeValue
-
         return {
+            #'accelX': np.array([x]),
+            #'accelY': np.array([y]),
+            #'accelZ': np.array([z]),
             'irX': np.array([irXValue]),
             'irY': np.array([irXValue]),
             'irId': np.array([irIdValue]),
-            'irSize': np.array([irSizeValue])}
+            'irSize': np.array([irSizeValue])
+            }
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
-"""
+
 if __name__ == '__main__':
     import sys
     app = QtGui.QApplication([])
@@ -183,32 +201,17 @@ if __name__ == '__main__':
 
     pw1 = pg.PlotWidget()
     layout.addWidget(pw1, 0, 1)
-    pw1.setYRange(0,1024)
-
-    pw2 = pg.PlotWidget()
-    layout.addWidget(pw2, 1, 1)
-    pw2.setYRange(0,1024)
+    pw1.setYRange(0, 1024)
 
     pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
     pw1Node.setPlot(pw1)
 
-    pw2Node = fc.createNode('PlotWidget', pos=(0, 150))
-    pw2Node.setPlot(pw2)
-
     wiimoteNode = fc.createNode('Wiimote', pos=(0, 0), )
-    #bufferNode = fc.createNode('Buffer', pos=(150, 0))
-    bufferNodeX = fc.createNode('Buffer', pos=(150, 0))
-    bufferNodeY = fc.createNode('Buffer', pos=(300, 0))
+    bufferNode = fc.createNode('Buffer', pos=(150, 0))
 
-    #fc.connectTerminals(wiimoteNode['accelX'], bufferNode['dataIn'])
-    #fc.connectTerminals(wiimoteNode['irX'], bufferNode['dataIn'])
-    fc.connectTerminals(wiimoteNode['irX'], bufferNodeX['dataIn'])
-    fc.connectTerminals(wiimoteNode['irY'], bufferNodeY['dataIn'])
-    #fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
-    fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
-    fc.connectTerminals(bufferNodeY['dataOut'], pw2Node['In'])
+    fc.connectTerminals(wiimoteNode['accelX'], bufferNode['dataIn'])
+    fc.connectTerminals(bufferNode['dataOut'], pw1Node['In'])
 
     win.show()
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
         QtGui.QApplication.instance().exec_()
-"""

@@ -8,7 +8,6 @@ import pyqtgraph
 import pyqtgraph as pg
 import numpy as np
 from PyQt4 import QtGui, QtCore
-
 import wiimote
 import wiimote_node
 
@@ -37,15 +36,18 @@ class Demo(QtGui.QWidget):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
+        self.buffer_amount = 20
+
         self.fc = Flowchart(terminals={
             'dataIn': {'io': 'in'},
             'dataOut': {'io': 'out'}
         })
         self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
-
-        wm = self.getWiimote()
-
         self.usePlotWidget()
+
+        self.getWiimote()
+
+
 
     def getWiimote(self):
         if len(sys.argv) == 1:
@@ -56,32 +58,35 @@ class Demo(QtGui.QWidget):
         elif len(sys.argv) == 3:
             addr, name = sys.argv[1:3]
         print("Connecting to %s (%s)" % (name, addr))
-        self.wiimote_address = addr
-        return wiimote.connect(addr, name)
-
+        #self.wiimote_address = addr
+        #return wiimote.connect(addr, name)
+        self.wiimoteNode.text.setText(addr)
+        self.wiimoteNode.connect_wiimote()
 
     def usePlotWidget(self):
+        print 'usePlotWidget'
         pw1 = pg.PlotWidget()
         self.layout.addWidget(pw1, 0, 1)
-        pw1.setYRange(0,1024)
+        pw1.setYRange(0, 1024)
 
         pw2 = pg.PlotWidget()
         self.layout.addWidget(pw2, 1, 1)
-        pw2.setYRange(0,1024)
+        pw2.setYRange(0, 1024)
 
-        pw1Node = self.fc.createNode('PlotWidget', pos=(0, -150))
+        pw1Node = self.fc.createNode('PlotWidget', pos=(150, -150))
         pw1Node.setPlot(pw1)
 
-        pw2Node = self.fc.createNode('PlotWidget', pos=(0, 150))
+        pw2Node = self.fc.createNode('PlotWidget', pos=(150, 150))
         pw2Node.setPlot(pw2)
 
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
-        self.wiimoteNode.btaddr = self.wiimote_address
-        self.wiimoteNode.text.setText(self.wiimote_address)
+        #self.wiimoteNode.btaddr = self.wiimote_address
+        #self.wiimoteNode.text.setText(self.wiimote_address)
+        #self.wiimoteNode.wiimote = self.wm
 
-        bufferNodeX = self.fc.createNode('Buffer', pos=(150, 0))
-        bufferNodeY = self.fc.createNode('Buffer', pos=(300, 0))
-
+        bufferNodeX = self.fc.createNode('Buffer', pos=(0, -150))
+        bufferNodeY = self.fc.createNode('Buffer', pos=(0, 150))
+        
         self.fc.connectTerminals(self.wiimoteNode['irX'], bufferNodeX['dataIn'])
         self.fc.connectTerminals(self.wiimoteNode['irY'], bufferNodeY['dataIn'])
         self.fc.connectTerminals(bufferNodeX['dataOut'], pw1Node['In'])
@@ -92,18 +97,16 @@ class Demo(QtGui.QWidget):
             self.close()
 
     def update(self):
+        # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
-            print 'Not None'
-            #return
             if self.wiimoteNode.wiimote.buttons['Plus']:
-                print 'Plus'
-                #pass
+                self.buffer_amount += 1
+                print 'plus'
             elif self.wiimoteNode.wiimote.buttons['Minus']:
-                print 'Minus'
-                #pass
-            else:
-                print 'else'
-                #pass
+                if self.buffer_amount > 1:
+                    self.buffer_amount -= 1
+                    print'minus'
+
         pyqtgraph.QtGui.QApplication.processEvents()
 
 if __name__ == "__main__":
