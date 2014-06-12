@@ -72,8 +72,14 @@ class Demo(QtGui.QWidget):
         """
 
         self.scp = pg.ScatterPlotWidget()
-        self.layout.addWidget(scp, 0, 1)
-
+        """
+        self.scp.getPlotItem().setBrush(pg.mkBrush(255, 255, 255, 120))
+        self.scp.getPlotItem().setPen(pg.mkPen(None))
+        self.scp.getPlotItem().setSymbol('o')
+        self.scp.getPlotItem().setSize(10)
+        """
+        self.layout.addWidget(self.scp, 0, 1)
+        
         self.pointVisNode = self.fc.createNode('PointVis', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
@@ -87,9 +93,15 @@ class Demo(QtGui.QWidget):
 
     def update(self):
         outputValues =  self.pointVisNode.outputValues()
-        print outputValues
-        #self.scp.setData(
-            #np.recarray([(outputValues['irX'], int), (outputValues['irX'], int)]))
+        
+        if outputValues['irX'] is not None and outputValues['irY'] is not None:
+            xy = np.array([(outputValues['irX'],), (outputValues['irY'],)], dtype=[('IR', float)])
+            print xy.view(np.recarray)
+            self.scp.setFields([
+            ('IR', {})
+            ])
+            self.scp.setData(xy)
+
 
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:

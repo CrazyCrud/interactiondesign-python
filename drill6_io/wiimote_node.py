@@ -193,7 +193,7 @@ class PointVisNode(Node):
             avgX = float(sum(xVals))/len(xVals) if len(xVals) > 0 else float('nan')
             avgY = float(sum(yVals))/len(yVals) if len(yVals) > 0 else float('nan')
 
-        return {'irX': np.array([avgX]), 'irY': np.array([avgY])}
+        return {'irX': avgX, 'irY': avgY}
 
 fclib.registerNodeType(PointVisNode, [('Sensor',)])
 
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     ## Create an empty flowchart with a single input and output
     fc = Flowchart(terminals={
         'dataIn': {'io': 'in'},
-        'dataOut': {'io': 'out'}    
+        'dataOut': {'io': 'out'}
     })
     w = fc.widget()
 
