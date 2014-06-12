@@ -61,6 +61,7 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.connect_wiimote()
 
     def usePlotWidget(self):
+        """
         pw1 = pg.PlotWidget()
         self.layout.addWidget(pw1, 0, 1)
         pw1.setYRange(0, 1024)
@@ -68,19 +69,28 @@ class Demo(QtGui.QWidget):
         pw2 = pg.PlotWidget()
         self.layout.addWidget(pw2, 1, 1)
         pw2.setYRange(0, 1024)
+        """
 
-        pointVisNode = self.fc.createNode('PointVis', pos=(-150, 150))
+        self.scp = pg.ScatterPlotWidget()
+        self.layout.addWidget(scp, 0, 1)
+
+        self.pointVisNode = self.fc.createNode('PointVis', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
-        bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
+        self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
 
-        self.fc.connectTerminals(self.wiimoteNode['irVals'], bufferNode['dataIn'])
-        self.fc.connectTerminals(bufferNode['dataOut'], pointVisNode['irVals'])
+        self.fc.connectTerminals(self.wiimoteNode['irVals'], self.bufferNode['dataIn'])
+        self.fc.connectTerminals(self.bufferNode['dataOut'], self.pointVisNode['irVals'])
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
     def update(self):
+        outputValues =  self.pointVisNode.outputValues()
+        print outputValues
+        #self.scp.setData(
+            #np.recarray([(outputValues['irX'], int), (outputValues['irX'], int)]))
+
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
