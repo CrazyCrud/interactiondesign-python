@@ -21,7 +21,7 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.05)
+        time.sleep(0.20)
 
     sys.exit(app.exec_())
 
