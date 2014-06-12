@@ -26,12 +26,13 @@ class BufferNode(CtrlNode):
 
     def __init__(self, name):
         terminals = {
-            'dataIn': dict(io='in'),  
-            'dataOut': dict(io='out'), 
+            'dataIn': dict(io='in'),
+            'dataOut': dict(io='out'),
         }
         self._buffer = np.array([])
+
         CtrlNode.__init__(self, name, terminals=terminals)
-        
+
     def process(self, **kwds):
         size = int(self.ctrls['size'].value())
         self._buffer = np.append(self._buffer, kwds['dataIn'])
@@ -39,8 +40,13 @@ class BufferNode(CtrlNode):
         output = self._buffer
         return {'dataOut': output}
 
+    def setBufferValue(self, value):
+        #self.uiTemplate[2]['value'] = value
+        self.ctrls['size'].setValue(value)
+        print self.ctrls['size'].value()
+
 fclib.registerNodeType(BufferNode, [('Data',)])
-        
+
 class WiimoteNode(Node):
     """
     Outputs sensor data from a Wiimote.
