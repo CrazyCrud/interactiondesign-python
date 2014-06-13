@@ -21,7 +21,7 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.20)
+        #time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -63,12 +63,15 @@ class Demo(QtGui.QWidget):
     def usePlotWidget(self):
         gview = pg.GraphicsLayoutWidget()  ## GraphicsView with GraphicsLayout inserted by default
         self.layout.addWidget(gview, 0, 1, 2, 1)
+
         plot = gview.addPlot()
         self.scatter = pg.ScatterPlotItem(
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
         plot.addItem(self.scatter)
+        plot.setXRange(-1000, 200)
+        plot.setYRange(-1000, 200)
 
-        self.pointVisNode = self.fc.createNode('PointVis', pos=(-150, 150))
+        self.pointVisNode = self.fc.createNode('Vis3D', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
 
@@ -82,8 +85,9 @@ class Demo(QtGui.QWidget):
     def update(self):
         outputValues =  self.pointVisNode.outputValues()
 
-        if outputValues['irX'] is not None and outputValues['irY'] is not None:            
-            self.scatter.setData(pos=[[-outputValues['irX'], -outputValues['irY']]])
+        if outputValues['irX1'] is not None and outputValues['irY1'] is not None:
+            if outputValues['irX2'] is not None and outputValues['irY2'] is not None:
+                self.scatter.setData(pos=[[-outputValues['irX1'], -outputValues['irY1']], [-outputValues['irX2'], -outputValues['irY2']]])
 
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:

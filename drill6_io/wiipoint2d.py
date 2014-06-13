@@ -21,7 +21,7 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.05)
+        #time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -68,7 +68,7 @@ class Demo(QtGui.QWidget):
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
         plot.addItem(self.scatter)
 
-        self.pointVisNode = self.fc.createNode('PointVis', pos=(-150, 150))
+        self.pointVisNode = self.fc.createNode('Vis2D', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
 
@@ -84,6 +84,8 @@ class Demo(QtGui.QWidget):
 
         if outputValues['irX'] is not None and outputValues['irY'] is not None:            
             self.scatter.setData(pos=[[-outputValues['irX'], -outputValues['irY']]])
+
+        print outputValues['irX']
 
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:

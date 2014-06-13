@@ -45,6 +45,7 @@ class BufferNode(CtrlNode):
         self.ctrls['size'].setValue(value)
         print self.ctrls['size'].value()
 
+
 fclib.registerNodeType(BufferNode, [('Data',)])
 
 class WiimoteNode(Node):
@@ -96,7 +97,6 @@ class WiimoteNode(Node):
         self.update_timer.timeout.connect(self.update_all_sensors)
     
         Node.__init__(self, name, terminals=terminals)
-        
 
     def update_all_sensors(self):
         if self.wiimote == None:
@@ -151,11 +151,11 @@ class WiimoteNode(Node):
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
-class PointVisNode(Node):
+class Vis2DNode(Node):
     """
 
     """
-    nodeName = "PointVis"
+    nodeName = "Vis2D"
 
     def __init__(self, name):
         terminals = {
@@ -201,7 +201,72 @@ class PointVisNode(Node):
 
         return {'irX': avgX, 'irY': avgY}
 
-fclib.registerNodeType(PointVisNode, [('Sensor',)])
+fclib.registerNodeType(Vis2DNode, [('Sensor',)])
+
+class Vis3DNode(Node):
+    """
+
+    """
+    nodeName = "Vis3D"
+
+    def __init__(self, name):
+        terminals = {
+            'irVals': dict(io='in'),
+            'irX1': dict(io='out'),
+            'irY1': dict(io='out'),
+            'irX2': dict(io='out'),
+            'irY2': dict(io='out')
+        }
+        self._ir_vals = []
+
+        Node.__init__(self, name, terminals=terminals)
+
+
+    def update_all_sensors(self):
+        self.update()
+
+    def update_ir(self, ir_vals):
+        self._ir_vals = ir_vals
+        print ir_vals
+        self.update()
+
+    def process(self, irVals):
+        biggest_id1 = -1
+        biggest_id2 = -1
+        rtu_values = {}
+
+        irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
+
+        for ir in irVals:
+            if biggest_id1 == -1:
+                biggest_id1 = ir['id']
+            if biggest_id2 == -1 and biggest_id1 != ir['id']:
+                biggest_id2 = ir['id']
+            if ir['id'] in rtu_values:
+                rtu_values[ir['id']]['x'].append(ir['x'])
+                rtu_values[ir['id']]['y'].append(ir['y'])
+            else:
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
+
+        avgX1 = 0
+        avgY1 = 0
+        avgX2 = 0
+        avgY2 = 0
+
+        if biggest_id1 > -1 and biggest_id2 > -1:
+            xVals1 = rtu_values[biggest_id1]['x']
+            yVals1 = rtu_values[biggest_id1]['y']
+            avgX1 = float(sum(xVals1))/len(xVals1) if len(xVals1) > 0 else float('nan')
+            avgY1 = float(sum(yVals1))/len(yVals1) if len(yVals1) > 0 else float('nan')
+
+            xVals2 = rtu_values[biggest_id2]['x']
+            yVals2 = rtu_values[biggest_id2]['y']
+            avgX2 = float(sum(xVals2))/len(xVals2) if len(xVals2) > 0 else float('nan')
+            avgY2 = float(sum(yVals2))/len(yVals2) if len(yVals2) > 0 else float('nan')
+
+        return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
+
+fclib.registerNodeType(Vis3DNode, [('Sensor',)])
 
 
 if __name__ == '__main__':
