@@ -15,13 +15,11 @@ import wiimote_node
 def main():
     app = QtGui.QApplication(sys.argv)
 
-    #wm = getWiimote()
     demo = Demo()
     demo.show()
 
     while True:
         demo.update()
-        #time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -36,7 +34,7 @@ class Demo(QtGui.QWidget):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        self.buffer_amount = 20
+        self.buffer_amount = 32
 
         self.fc = Flowchart(terminals={
             'dataIn': {'io': 'in'},
@@ -61,7 +59,7 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.connect_wiimote()
 
     def usePlotWidget(self):
-        gview = pg.GraphicsLayoutWidget()  ## GraphicsView with GraphicsLayout inserted by default
+        gview = pg.GraphicsLayoutWidget()
         self.layout.addWidget(gview, 0, 1, 2, 1)
         plot = gview.addPlot()
         self.scatter = pg.ScatterPlotItem(
@@ -72,32 +70,30 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
 
-        self.fc.connectTerminals(self.wiimoteNode['irVals'], self.bufferNode['dataIn'])
-        self.fc.connectTerminals(self.bufferNode['dataOut'], self.pointVisNode['irVals'])
+        self.fc.connectTerminals(
+            self.wiimoteNode['irVals'], self.bufferNode['dataIn'])
+        self.fc.connectTerminals(
+            self.bufferNode['dataOut'], self.pointVisNode['irVals'])
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
     def update(self):
-        outputValues =  self.pointVisNode.outputValues()
+        outputValues = self.pointVisNode.outputValues()
 
-        if outputValues['irX'] is not None and outputValues['irY'] is not None:            
-            self.scatter.setData(pos=[[-outputValues['irX'], -outputValues['irY']]])
+        if outputValues['irX'] is not None and outputValues['irY'] is not None:
+            self.scatter.setData(
+                pos=[[-outputValues['irX'], -outputValues['irY']]])
 
-        print outputValues['irX']
-
-        # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
                 self.buffer_amount += 1
                 self.bufferNode.setBufferValue(self.buffer_amount)
-                print 'plus'
             elif self.wiimoteNode.wiimote.buttons['Minus']:
                 if self.buffer_amount > 1:
                     self.buffer_amount -= 1
                     self.bufferNode.setBufferValue(self.buffer_amount)
-                    print'minus'
 
         pyqtgraph.QtGui.QApplication.processEvents()
 

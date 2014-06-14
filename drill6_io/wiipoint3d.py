@@ -16,13 +16,11 @@ import math
 def main():
     app = QtGui.QApplication(sys.argv)
 
-    #wm = getWiimote()
     demo = Demo()
     demo.show()
 
     while True:
         demo.update()
-        time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -37,7 +35,7 @@ class Demo(QtGui.QWidget):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        self.buffer_amount = 20
+        self.buffer_amount = 32
 
         self.fc = Flowchart(terminals={
             'dataIn': {'io': 'in'},
@@ -62,7 +60,7 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.connect_wiimote()
 
     def usePlotWidget(self):
-        gview = pg.GraphicsLayoutWidget()  ## GraphicsView with GraphicsLayout inserted by default
+        gview = pg.GraphicsLayoutWidget()
         self.layout.addWidget(gview, 0, 1, 2, 1)
 
         plot = gview.addPlot()
@@ -76,38 +74,36 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
 
-        self.fc.connectTerminals(self.wiimoteNode['irVals'], self.bufferNode['dataIn'])
-        self.fc.connectTerminals(self.bufferNode['dataOut'], self.pointVisNode['irVals'])
+        self.fc.connectTerminals(
+            self.wiimoteNode['irVals'], self.bufferNode['dataIn'])
+        self.fc.connectTerminals(
+            self.bufferNode['dataOut'], self.pointVisNode['irVals'])
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
     def update(self):
-        outputValues =  self.pointVisNode.outputValues()
+        outputValues = self.pointVisNode.outputValues()
 
         if outputValues['irX1'] is not None and outputValues['irY1'] is not None:
             if outputValues['irX2'] is not None and outputValues['irY2'] is not None:
                 distance = self.calcDistance(outputValues)
-                #
                 if distance > 0:
-                    print distance
                     size = 1000 * (1 / distance)
-                    print size
-                    self.scatter.setData(pos=[[-outputValues['irX1'], -outputValues['irY1']], [-outputValues['irX2'], -outputValues['irY2']]],
-                    size=size, pxMode=True)
+                    self.scatter.setData(
+                        pos=[[-outputValues['irX1'], -outputValues['irY1']],
+                            [-outputValues['irX2'], -outputValues['irY2']]],
+                        size=size, pxMode=True)
 
-        # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
                 self.buffer_amount += 1
                 self.bufferNode.setBufferValue(self.buffer_amount)
-                print 'plus'
             elif self.wiimoteNode.wiimote.buttons['Minus']:
                 if self.buffer_amount > 1:
                     self.buffer_amount -= 1
                     self.bufferNode.setBufferValue(self.buffer_amount)
-                    print'minus'
 
         pyqtgraph.QtGui.QApplication.processEvents()
 
@@ -117,13 +113,12 @@ class Demo(QtGui.QWidget):
         x2 = outputValues['irX2']
         y2 = outputValues['irY2']
 
-        #print "(%d, %d, %d, %d)"%(x1, y1, x2, y2)
         hfov = 41
         vfov = 31
-        lightDistance = 30#cm
-        fov = ((hfov/1024.0) + (vfov/768.0)) / 2.0
+        lightDistance = 30
+        fov = ((hfov / 1024.0) + (vfov / 768.0)) / 2.0
 
-        r = math.sqrt(math.pow(x1-x2, 2) + math.pow(y1-y2, 2))
+        r = math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
 
         alpha = (fov * r) / 4.0
 
@@ -132,7 +127,7 @@ class Demo(QtGui.QWidget):
         try:
             camDistance = lightDistance / (2 * tan)
         except:
-            camDistance = 0 
+            camDistance = 0
         return camDistance
 
 if __name__ == "__main__":

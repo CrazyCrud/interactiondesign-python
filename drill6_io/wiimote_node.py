@@ -16,7 +16,7 @@ class BufferNode(CtrlNode):
     """
     Buffers the last n samples provided on input and provides them as a list of
     length n on output.
-    A spinbox widget allows for setting the size of the buffer. 
+    A spinbox widget allows for setting the size of the buffer.
     Default size is 32 samples.
     """
     nodeName = "Buffer"
@@ -41,9 +41,7 @@ class BufferNode(CtrlNode):
         return {'dataOut': output}
 
     def setBufferValue(self, value):
-        #self.uiTemplate[2]['value'] = value
         self.ctrls['size'].setValue(value)
-        print self.ctrls['size'].value()
 
 
 fclib.registerNodeType(BufferNode, [('Data',)])
@@ -51,16 +49,16 @@ fclib.registerNodeType(BufferNode, [('Data',)])
 class WiimoteNode(Node):
     """
     Outputs sensor data from a Wiimote.
-    
+
     Supported sensors: accelerometer (3 axis)
-    Text input box allows for setting a Bluetooth MAC address. 
+    Text input box allows for setting a Bluetooth MAC address.
     Pressing the "connect" button tries connecting to the Wiimote.
-    Update rate can be changed via a spinbox widget. Setting it to "0" 
+    Update rate can be changed via a spinbox widget. Setting it to "0"
     activates callbacks everytime a new sensor value arrives (which is
     quite often -> performance hit)
     """
     nodeName = "Wiimote"
-    
+
     def __init__(self, name):
         terminals = {
             'accelX': dict(io='out'),
@@ -95,7 +93,7 @@ class WiimoteNode(Node):
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
-    
+
         Node.__init__(self, name, terminals=terminals)
 
     def update_all_sensors(self):
@@ -110,20 +108,19 @@ class WiimoteNode(Node):
         self.update()
 
     def update_ir(self, ir_vals):
-        #print 'update_ir'
         self._ir_vals = ir_vals
         self.update()
 
     def ctrlWidget(self):
         return self.ui
-        
+
     def connect_wiimote(self):
         self.btaddr = str(self.text.text()).strip()
         if self.wiimote is not None:
             self.wiimote.disconnect()
             self.wiimote = None
             self.connect_button.setText("connect")
-            return 
+            return
         if len(self.btaddr) == 17 :
             self.connect_button.setText("connecting...")
             self.wiimote = wiimote.connect(self.btaddr)
@@ -152,9 +149,6 @@ class WiimoteNode(Node):
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
 class Vis2DNode(Node):
-    """
-
-    """
     nodeName = "Vis2D"
 
     def __init__(self, name):
@@ -173,40 +167,36 @@ class Vis2DNode(Node):
 
     def update_ir(self, ir_vals):
         self._ir_vals = ir_vals
-        print ir_vals
         self.update()
 
     def process(self, irVals):
-        biggest_id = -1
-        biggest_size = -1
+        ir_id = -1
+        ir_size = -1
         rtu_values = {}
 
         for ir in irVals:
-            if ir['size'] > biggest_size:
-                biggest_id = ir['id']
+            if ir['size'] > ir_size:
+                ir_id = ir['id']
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
                 rtu_values[ir['id']]['y'].append(ir['y'])
             else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
 
         avgX = 0
         avgY = 0
 
-        if biggest_id > -1:
-            xVals = rtu_values[biggest_id]['x']
-            yVals = rtu_values[biggest_id]['y']
-            avgX = float(sum(xVals))/len(xVals) if len(xVals) > 0 else float('nan')
-            avgY = float(sum(yVals))/len(yVals) if len(yVals) > 0 else float('nan')
+        if ir_id > -1:
+            xVals = rtu_values[ir_id]['x']
+            yVals = rtu_values[ir_id]['y']
+            avgX = float(sum(xVals)) / len(xVals) if len(xVals) > 0 else 0
+            avgY = float(sum(yVals)) / len(yVals) if len(yVals) > 0 else 0
 
         return {'irX': avgX, 'irY': avgY}
 
 fclib.registerNodeType(Vis2DNode, [('Sensor',)])
 
 class Vis3DNode(Node):
-    """
-
-    """
     nodeName = "Vis3D"
 
     def __init__(self, name):
@@ -227,42 +217,41 @@ class Vis3DNode(Node):
 
     def update_ir(self, ir_vals):
         self._ir_vals = ir_vals
-        print ir_vals
         self.update()
 
     def process(self, irVals):
-        biggest_id1 = -1
-        biggest_id2 = -1
+        ir_id_1 = -1
+        ir_id_2 = -1
         rtu_values = {}
 
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
 
         for ir in irVals:
-            if biggest_id1 == -1:
-                biggest_id1 = ir['id']
-            if biggest_id2 == -1 and biggest_id1 != ir['id']:
-                biggest_id2 = ir['id']
+            if ir_id_1 == -1:
+                ir_id_1 = ir['id']
+            if ir_id_2 == -1 and ir_id_1 != ir['id']:
+                ir_id_2 = ir['id']
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
                 rtu_values[ir['id']]['y'].append(ir['y'])
             else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
 
         avgX1 = 0
         avgY1 = 0
         avgX2 = 0
         avgY2 = 0
 
-        if biggest_id1 > -1 and biggest_id2 > -1:
-            xVals1 = rtu_values[biggest_id1]['x']
-            yVals1 = rtu_values[biggest_id1]['y']
-            avgX1 = float(sum(xVals1))/len(xVals1) if len(xVals1) > 0 else float('nan')
-            avgY1 = float(sum(yVals1))/len(yVals1) if len(yVals1) > 0 else float('nan')
+        if ir_id_1 > -1 and ir_id_2 > -1:
+            xVals1 = rtu_values[ir_id_1]['x']
+            yVals1 = rtu_values[ir_id_1]['y']
+            avgX1 = float(sum(xVals1)) / len(xVals1) if len(xVals1) > 0 else 0
+            avgY1 = float(sum(yVals1)) / len(yVals1) if len(yVals1) > 0 else 0
 
-            xVals2 = rtu_values[biggest_id2]['x']
-            yVals2 = rtu_values[biggest_id2]['y']
-            avgX2 = float(sum(xVals2))/len(xVals2) if len(xVals2) > 0 else float('nan')
-            avgY2 = float(sum(yVals2))/len(yVals2) if len(yVals2) > 0 else float('nan')
+            xVals2 = rtu_values[ir_id_2]['x']
+            yVals2 = rtu_values[ir_id_2]['y']
+            avgX2 = float(sum(xVals2)) / len(xVals2) if len(xVals2) > 0 else 0
+            avgY2 = float(sum(yVals2)) / len(yVals2) if len(yVals2) > 0 else 0
 
         return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
 
