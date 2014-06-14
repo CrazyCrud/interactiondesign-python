@@ -40,12 +40,17 @@ class BufferNode(CtrlNode):
         output = self._buffer
         return {'dataOut': output}
 
+<<<<<<< HEAD
     def setBufferSize(self, value):
         self.ctrls['size'].setValue(value)
 
     def getBufferSize(self):
         size = int(self.ctrls['size'].value())
         return size
+=======
+    def setBufferValue(self, value):
+        self.ctrls['size'].setValue(value)
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
 
 
 fclib.registerNodeType(BufferNode, [('Data',)])
@@ -129,7 +134,11 @@ class WiimoteNode(Node):
             self.wiimote = None
             self.connect_button.setText("connect")
             return
+<<<<<<< HEAD
         if len(self.btaddr) == 17:
+=======
+        if len(self.btaddr) == 17 :
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
             self.connect_button.setText("connecting...")
             self.wiimote = wiimote.connect(self.btaddr)
             if self.wiimote is None:
@@ -189,10 +198,15 @@ class Vis2DNode(Node):
         rtu_values = {}
 
         for ir in irVals:
+<<<<<<< HEAD
             # get id of the biggest light
+            if ir['size'] > biggest_size:
+                biggest_id = ir['id']
+            # append x/y values to list
+=======
             if ir['size'] > ir_size:
                 ir_id = ir['id']
-            # append x/y values to list
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
                 rtu_values[ir['id']]['y'].append(ir['y'])
@@ -202,10 +216,11 @@ class Vis2DNode(Node):
         avgX = 0
         avgY = 0
 
+<<<<<<< HEAD
         # calc average x/y of biggest light
-        if ir_id > -1:
-            xVals = rtu_values[ir_id]['x']
-            yVals = rtu_values[ir_id]['y']
+        if biggest_id > -1:
+            xVals = rtu_values[biggest_id]['x']
+            yVals = rtu_values[biggest_id]['y']
 
             if len(xVals) > 0:
                 avgX = float(sum(xVals))/len(xVals)
@@ -216,6 +231,13 @@ class Vis2DNode(Node):
                 avgY = float(sum(yVals))/len(yVals)
             else:
                 avgY = float('nan')
+=======
+        if ir_id > -1:
+            xVals = rtu_values[ir_id]['x']
+            yVals = rtu_values[ir_id]['y']
+            avgX = float(sum(xVals)) / len(xVals) if len(xVals) > 0 else 0
+            avgY = float(sum(yVals)) / len(yVals) if len(yVals) > 0 else 0
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
 
         return {'irX': avgX, 'irY': avgY}
 
@@ -255,13 +277,20 @@ class Vis3DNode(Node):
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
 
         for ir in irVals:
+<<<<<<< HEAD
+            if biggest_id1 == -1:
+                # take id of first element with the biggest size
+                biggest_id1 = ir['id']
+            if biggest_id2 == -1 and biggest_id1 != ir['id']:
+                # take id of element with the second biggest size
+                biggest_id2 = ir['id']
+            # append x/y values to list
+=======
             if ir_id_1 == -1:
-            	# take id of first element with the biggest size
                 ir_id_1 = ir['id']
             if ir_id_2 == -1 and ir_id_1 != ir['id']:
-            	# take id of element with the second biggest size
                 ir_id_2 = ir['id']
-            # append x/y values to list
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
                 rtu_values[ir['id']]['y'].append(ir['y'])
@@ -272,11 +301,12 @@ class Vis3DNode(Node):
         avgY1 = 0
         avgX2 = 0
         avgY2 = 0
-        
+
+<<<<<<< HEAD
         # calc average x/y of the two biggest lights
-        if ir_id_1 > -1 and ir_id_2 > -1:
-            xVals1 = rtu_values[ir_id_1]['x']
-            yVals1 = rtu_values[ir_id_1]['y']
+        if biggest_id1 > -1 and biggest_id2 > -1:
+            xVals1 = rtu_values[biggest_id1]['x']
+            yVals1 = rtu_values[biggest_id1]['y']
 
             if len(xVals1) > 0:
                 avgX1 = float(sum(xVals1))/len(xVals1)
@@ -288,8 +318,8 @@ class Vis3DNode(Node):
             else:
                 avgY1 = float('nan')
 
-            xVals2 = rtu_values[ir_id_2]['x']
-            yVals2 = rtu_values[ir_id_2]['y']
+            xVals2 = rtu_values[biggest_id2]['x']
+            yVals2 = rtu_values[biggest_id2]['y']
 
             if len(xVals2) > 0:
                 avgX2 = float(sum(xVals2))/len(xVals2)
@@ -300,6 +330,18 @@ class Vis3DNode(Node):
                 avgY2 = float(sum(yVals2))/len(yVals2)
             else:
                 avgY2 = float('nan')
+=======
+        if ir_id_1 > -1 and ir_id_2 > -1:
+            xVals1 = rtu_values[ir_id_1]['x']
+            yVals1 = rtu_values[ir_id_1]['y']
+            avgX1 = float(sum(xVals1)) / len(xVals1) if len(xVals1) > 0 else 0
+            avgY1 = float(sum(yVals1)) / len(yVals1) if len(yVals1) > 0 else 0
+
+            xVals2 = rtu_values[ir_id_2]['x']
+            yVals2 = rtu_values[ir_id_2]['y']
+            avgX2 = float(sum(xVals2)) / len(xVals2) if len(xVals2) > 0 else 0
+            avgY2 = float(sum(yVals2)) / len(yVals2) if len(yVals2) > 0 else 0
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
 
         return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
 

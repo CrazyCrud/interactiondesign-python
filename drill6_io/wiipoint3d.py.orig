@@ -8,6 +8,7 @@ import pyqtgraph as pg
 from PyQt4 import QtGui, QtCore
 import wiimote
 from wiimote_node import *
+import math
 
 
 def main():
@@ -18,7 +19,6 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -33,6 +33,8 @@ class Demo(QtGui.QWidget):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
+        self.buffer_amount = 32
+
         self.fc = Flowchart(terminals={
             'dataIn': {'io': 'in'},
             'dataOut': {'io': 'out'}
@@ -44,7 +46,6 @@ class Demo(QtGui.QWidget):
 
         self.getWiimote()
 
-    # connect to wiimote and config wiimote node
     def getWiimote(self):
         if len(sys.argv) == 1:
             addr, name = wiimote.find()[0]
@@ -58,9 +59,10 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.text.setText(addr)
         self.wiimoteNode.connect_wiimote()
 
+<<<<<<< HEAD
     # create and connect nodes
     def configNodes(self):
-        self.pointVisNode = self.fc.createNode('Vis2D', pos=(-150, 150))
+        self.pointVisNode = self.fc.createNode('Vis3D', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
 
@@ -75,17 +77,31 @@ class Demo(QtGui.QWidget):
 
     # create and config scatter plot item
     def configScatterPlot(self):
+=======
+    def usePlotWidget(self):
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
         gview = pg.GraphicsLayoutWidget()
         self.layout.addWidget(gview, 0, 1, 2, 1)
+
         plot = gview.addPlot()
         self.scatter = pg.ScatterPlotItem(
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
         plot.addItem(self.scatter)
         plot.setXRange(-1000, 200)
         plot.setYRange(-1000, 200)
+
+<<<<<<< HEAD
+=======
+        self.pointVisNode = self.fc.createNode('Vis3D', pos=(-150, 150))
+        self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
+        self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
+
+        self.fc.connectTerminals(
+            self.wiimoteNode['irVals'], self.bufferNode['dataIn'])
         self.fc.connectTerminals(
             self.bufferNode['dataOut'], self.pointVisNode['irVals'])
 
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
@@ -94,20 +110,83 @@ class Demo(QtGui.QWidget):
     def update(self):
         outputValues = self.pointVisNode.outputValues()
 
-        if outputValues['irX'] is not None and outputValues['irY'] is not None:
-            self.scatter.setData(pos=[
-                [-outputValues['irX'], -outputValues['irY']]])
+        if outputValues['irX1'] is not None and
+        outputValues['irY1'] is not None:
+            if outputValues['irX2'] is not None and
+            outputValues['irY2'] is not None:
+                distance = self.calcDistance(outputValues)
+<<<<<<< HEAD
+
+                if distance > 0:
+                    size = 1000 * (1 / distance)
+
+                    self.scatter.setData(
+                        pos=[[
+                            -outputValues['irX1'],
+                            -outputValues['irY1']],
+=======
+                if distance > 0:
+                    size = 1000 * (1 / distance)
+                    self.scatter.setData(
+                        pos=[[-outputValues['irX1'], -outputValues['irY1']],
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
+                            [-outputValues['irX2'], -outputValues['irY2']]],
+                        size=size, pxMode=True)
 
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
                 self.buffer_amount += 1
+<<<<<<< HEAD
                 self.bufferNode.setBufferSize(self.buffer_amount)
             elif self.wiimoteNode.wiimote.buttons['Minus']:
                 if self.buffer_amount > 1:
                     self.buffer_amount -= 1
                     self.bufferNode.setBufferSize(self.buffer_amount)
+=======
+                self.bufferNode.setBufferValue(self.buffer_amount)
+            elif self.wiimoteNode.wiimote.buttons['Minus']:
+                if self.buffer_amount > 1:
+                    self.buffer_amount -= 1
+                    self.bufferNode.setBufferValue(self.buffer_amount)
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
 
         pyqtgraph.QtGui.QApplication.processEvents()
+
+    # calc distance from wiimote to the two lights
+    # reference: http://wiiphysics.site88.net/physics.html
+    def calcDistance(self, outputValues):
+        x1 = outputValues['irX1']
+        y1 = outputValues['irY1']
+        x2 = outputValues['irX2']
+        y2 = outputValues['irY2']
+
+<<<<<<< HEAD
+        # init wiimote's camera angles
+        hfov = 41
+        vfov = 31
+
+        # set constant distance between the two lights
+        lightDistance = 30
+
+        fov = ((hfov/1024.0) + (vfov/768.0)) / 2.0
+=======
+        hfov = 41
+        vfov = 31
+        lightDistance = 30
+        fov = ((hfov / 1024.0) + (vfov / 768.0)) / 2.0
+>>>>>>> 1a279436b31997cad41a5160667add084e0d70b9
+
+        r = math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
+
+        alpha = (fov * r) / 4.0
+
+        tan = math.tan(math.radians(alpha))
+
+        try:
+            camDistance = lightDistance / (2 * tan)
+        except:
+            camDistance = 0
+        return camDistance
 
 if __name__ == "__main__":
     main()

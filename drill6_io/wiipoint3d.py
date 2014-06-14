@@ -19,7 +19,6 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -34,7 +33,7 @@ class Demo(QtGui.QWidget):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        self.buffer_amount = 20
+        self.buffer_amount = 32
 
         self.fc = Flowchart(terminals={
             'dataIn': {'io': 'in'},
@@ -87,6 +86,8 @@ class Demo(QtGui.QWidget):
         plot.setXRange(-1000, 200)
         plot.setYRange(-1000, 200)
 
+        self.fc.connectTerminals(
+            self.bufferNode['dataOut'], self.pointVisNode['irVals'])
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
@@ -111,7 +112,6 @@ class Demo(QtGui.QWidget):
                             [-outputValues['irX2'], -outputValues['irY2']]],
                         size=size, pxMode=True)
 
-        # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
                 self.buffer_amount += 1
@@ -138,9 +138,9 @@ class Demo(QtGui.QWidget):
         # set constant distance between the two lights
         lightDistance = 30
 
-        fov = ((hfov/1024.0) + (vfov/768.0)) / 2.0
+        fov = ((hfov / 1024.0) + (vfov / 768.0)) / 2.0
 
-        r = math.sqrt(math.pow(x1-x2, 2) + math.pow(y1-y2, 2))
+        r = math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
 
         alpha = (fov * r) / 4.0
 
