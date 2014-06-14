@@ -95,21 +95,22 @@ class Demo(QtGui.QWidget):
     def update(self):
         outputValues = self.pointVisNode.outputValues()
 
-        if outputValues['irX1'] is not None and
-        outputValues['irY1'] is not None:
-            if outputValues['irX2'] is not None and
-            outputValues['irY2'] is not None:
-                distance = self.calcDistance(outputValues)
+        isX1Valid = outputValues['irX1'] is not None
+        isY1Valid = outputValues['irY1'] is not None
+        isX2Valid = outputValues['irX2'] is not None
+        isY2Valid = outputValues['irY2'] is not None
 
-                if distance > 0:
-                    size = 1000 * (1 / distance)
+        if isX1Valid and isX2Valid and isY1Valid and isY2Valid:
+            distance = self.calcDistance(outputValues)
+            if distance > 0:
+                size = 3000 * (1 / distance * 2)
 
-                    self.scatter.setData(
-                        pos=[[
-                            -outputValues['irX1'],
-                            -outputValues['irY1']],
-                            [-outputValues['irX2'], -outputValues['irY2']]],
-                        size=size, pxMode=True)
+                self.scatter.setData(
+                    pos=[[
+                        -outputValues['irX1'],
+                        -outputValues['irY1']],
+                        [-outputValues['irX2'], -outputValues['irY2']]],
+                    size=size, pxMode=True)
 
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
