@@ -83,8 +83,6 @@ class Demo(QtGui.QWidget):
         plot.addItem(self.scatter)
         plot.setXRange(-1000, 200)
         plot.setYRange(-1000, 200)
-        self.fc.connectTerminals(
-            self.bufferNode['dataOut'], self.pointVisNode['irVals'])
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
@@ -98,6 +96,7 @@ class Demo(QtGui.QWidget):
             self.scatter.setData(pos=[
                 [-outputValues['irX'], -outputValues['irY']]])
 
+        # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
                 self.buffer_amount += 1

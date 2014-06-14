@@ -164,6 +164,9 @@ fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 # node filtering the one ir object with the biggest size and
 # calculating x/y average
 class Vis2DNode(Node):
+    """
+
+    """
     nodeName = "Vis2D"
 
     def __init__(self, name):
@@ -185,12 +188,12 @@ class Vis2DNode(Node):
 
     def process(self, irVals):
         ir_id = -1
-        ir_size = -1
+        biggest_size = -1
         rtu_values = {}
 
         for ir in irVals:
             # get id of the biggest light
-            if ir['size'] > ir_size:
+            if ir['size'] > biggest_size:
                 ir_id = ir['id']
             # append x/y values to list
             if ir['id'] in rtu_values:
@@ -225,6 +228,9 @@ fclib.registerNodeType(Vis2DNode, [('Sensor',)])
 # node filtering the two ir objects with the biggest size and
 # calculating x/y average
 class Vis3DNode(Node):
+    """
+
+    """
     nodeName = "Vis3D"
 
     def __init__(self, name):
@@ -247,20 +253,20 @@ class Vis3DNode(Node):
         self.update()
 
     def process(self, irVals):
-        ir_id_1 = -1
-        ir_id_2 = -1
+        ir_id1 = -1
+        ir_id2 = -1
         rtu_values = {}
 
         # sort irVals by size
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
 
         for ir in irVals:
-            if ir_id_1 == -1:
-            	# take id of first element with the biggest size
-                ir_id_1 = ir['id']
-            if ir_id_2 == -1 and ir_id_1 != ir['id']:
-            	# take id of element with the second biggest size
-                ir_id_2 = ir['id']
+            if ir_id1 == -1:
+                # take id of first element with the biggest size
+                ir_id1 = ir['id']
+            if ir_id2 == -1 and ir_id1 != ir['id']:
+                # take id of element with the second biggest size
+                ir_id2 = ir['id']
             # append x/y values to list
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
@@ -272,34 +278,34 @@ class Vis3DNode(Node):
         avgY1 = 0
         avgX2 = 0
         avgY2 = 0
-        
+
         # calc average x/y of the two biggest lights
-        if ir_id_1 > -1 and ir_id_2 > -1:
-            xVals1 = rtu_values[ir_id_1]['x']
-            yVals1 = rtu_values[ir_id_1]['y']
+        if ir_id1 > -1 and ir_id2 > -1:
+            xVals1 = rtu_values[ir_id1]['x']
+            yVals1 = rtu_values[ir_id1]['y']
 
             if len(xVals1) > 0:
                 avgX1 = float(sum(xVals1))/len(xVals1)
             else:
-                avgX1 = float('nan')
+                avgX1 = 0
 
             if len(yVals1) > 0:
                 avgY1 = float(sum(yVals1))/len(yVals1)
             else:
-                avgY1 = float('nan')
+                avgY1 = 0
 
-            xVals2 = rtu_values[ir_id_2]['x']
-            yVals2 = rtu_values[ir_id_2]['y']
+            xVals2 = rtu_values[ir_id2]['x']
+            yVals2 = rtu_values[ir_id2]['y']
 
             if len(xVals2) > 0:
                 avgX2 = float(sum(xVals2))/len(xVals2)
             else:
-                avgX2 = float('nan')
+                avgX2 = 0
 
             if len(yVals2) > 0:
                 avgY2 = float(sum(yVals2))/len(yVals2)
             else:
-                avgY2 = float('nan')
+                avgY2 = 0
 
         return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
 
