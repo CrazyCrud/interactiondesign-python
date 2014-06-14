@@ -16,7 +16,7 @@ class BufferNode(CtrlNode):
     """
     Buffers the last n samples provided on input and provides them as a list of
     length n on output.
-    A spinbox widget allows for setting the size of the buffer. 
+    A spinbox widget allows for setting the size of the buffer.
     Default size is 32 samples.
     """
     nodeName = "Buffer"
@@ -40,27 +40,30 @@ class BufferNode(CtrlNode):
         output = self._buffer
         return {'dataOut': output}
 
-    def setBufferValue(self, value):
-        #self.uiTemplate[2]['value'] = value
+    def setBufferSize(self, value):
         self.ctrls['size'].setValue(value)
-        print self.ctrls['size'].value()
+
+    def getBufferSize(self):
+        size = int(self.ctrls['size'].value())
+        return size
 
 
 fclib.registerNodeType(BufferNode, [('Data',)])
 
+
 class WiimoteNode(Node):
     """
     Outputs sensor data from a Wiimote.
-    
+
     Supported sensors: accelerometer (3 axis)
-    Text input box allows for setting a Bluetooth MAC address. 
+    Text input box allows for setting a Bluetooth MAC address.
     Pressing the "connect" button tries connecting to the Wiimote.
-    Update rate can be changed via a spinbox widget. Setting it to "0" 
+    Update rate can be changed via a spinbox widget. Setting it to "0"
     activates callbacks everytime a new sensor value arrives (which is
     quite often -> performance hit)
     """
     nodeName = "Wiimote"
-    
+
     def __init__(self, name):
         terminals = {
             'accelX': dict(io='out'),
@@ -91,15 +94,18 @@ class WiimoteNode(Node):
         self.layout.addWidget(self.connect_button)
         self.ui.setLayout(self.layout)
         self.connect_button.clicked.connect(self.connect_wiimote)
-        self.btaddr = "B8:AE:6E:50:05:32" # for ease of use
+
+        # for ease of use
+        self.btaddr = "B8:AE:6E:50:05:32"
+
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
-    
+
         Node.__init__(self, name, terminals=terminals)
 
     def update_all_sensors(self):
-        if self.wiimote == None:
+        if self.wiimote is None:
             return
         self._acc_vals = self.wiimote.accelerometer
         self._ir_vals = self.wiimote.ir
@@ -110,31 +116,31 @@ class WiimoteNode(Node):
         self.update()
 
     def update_ir(self, ir_vals):
-        #print 'update_ir'
         self._ir_vals = ir_vals
         self.update()
 
     def ctrlWidget(self):
         return self.ui
-        
+
     def connect_wiimote(self):
         self.btaddr = str(self.text.text()).strip()
         if self.wiimote is not None:
             self.wiimote.disconnect()
             self.wiimote = None
             self.connect_button.setText("connect")
-            return 
-        if len(self.btaddr) == 17 :
+            return
+        if len(self.btaddr) == 17:
             self.connect_button.setText("connecting...")
             self.wiimote = wiimote.connect(self.btaddr)
-            if self.wiimote == None:
+            if self.wiimote is None:
                 self.connect_button.setText("try again")
             else:
                 self.connect_button.setText("disconnect")
                 self.set_update_rate(self.update_rate_input.value())
 
     def set_update_rate(self, rate):
-        if rate == 0: # use callbacks for max. update rate
+        if rate == 0:
+            # use callbacks for max. update rate
             self.wiimote.accelerometer.register_callback(self.update_accel)
             self.wiimote.ir.register_callback(self.update_ir)
             self.update_timer.stop()
@@ -144,13 +150,19 @@ class WiimoteNode(Node):
             self.update_timer.start(1000.0/rate)
 
     def process(self, **kwdargs):
-        x,y,z = self._acc_vals
+        x, y, z = self._acc_vals
 
-        return {'accelX': np.array([x]), 'accelY': np.array([y]), 'accelZ': np.array([z]),
+        return {
+            'accelX': np.array([x]),
+            'accelY': np.array([y]),
+            'accelZ': np.array([z]),
             'irVals': np.array(self._ir_vals)}
 
 fclib.registerNodeType(WiimoteNode, [('Sensor',)])
 
+
+# node filtering the one ir object with the biggest size and
+# calculating x/y average
 class Vis2DNode(Node):
     """
 
@@ -167,13 +179,11 @@ class Vis2DNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
-
     def update_all_sensors(self):
         self.update()
 
     def update_ir(self, ir_vals):
         self._ir_vals = ir_vals
-        print ir_vals
         self.update()
 
     def process(self, irVals):
@@ -182,27 +192,41 @@ class Vis2DNode(Node):
         rtu_values = {}
 
         for ir in irVals:
+            # get id of the biggest light
             if ir['size'] > biggest_size:
                 biggest_id = ir['id']
+            # append x/y values to list
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
                 rtu_values[ir['id']]['y'].append(ir['y'])
             else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
 
         avgX = 0
         avgY = 0
 
+        # calc average x/y of biggest light
         if biggest_id > -1:
             xVals = rtu_values[biggest_id]['x']
             yVals = rtu_values[biggest_id]['y']
-            avgX = float(sum(xVals))/len(xVals) if len(xVals) > 0 else float('nan')
-            avgY = float(sum(yVals))/len(yVals) if len(yVals) > 0 else float('nan')
+
+            if len(xVals) > 0:
+                avgX = float(sum(xVals))/len(xVals)
+            else:
+                avgX = float('nan')
+
+            if len(yVals) > 0:
+                avgY = float(sum(yVals))/len(yVals)
+            else:
+                avgY = float('nan')
 
         return {'irX': avgX, 'irY': avgY}
 
 fclib.registerNodeType(Vis2DNode, [('Sensor',)])
 
+
+# node filtering the two ir objects with the biggest size and
+# calculating x/y average
 class Vis3DNode(Node):
     """
 
@@ -221,13 +245,11 @@ class Vis3DNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
-
     def update_all_sensors(self):
         self.update()
 
     def update_ir(self, ir_vals):
         self._ir_vals = ir_vals
-        print ir_vals
         self.update()
 
     def process(self, irVals):
@@ -235,34 +257,55 @@ class Vis3DNode(Node):
         biggest_id2 = -1
         rtu_values = {}
 
+        # sort irVals by size
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
 
         for ir in irVals:
             if biggest_id1 == -1:
+                # take id of first element with the biggest size
                 biggest_id1 = ir['id']
             if biggest_id2 == -1 and biggest_id1 != ir['id']:
+                # take id of element with the second biggest size
                 biggest_id2 = ir['id']
+            # append x/y values to list
             if ir['id'] in rtu_values:
                 rtu_values[ir['id']]['x'].append(ir['x'])
                 rtu_values[ir['id']]['y'].append(ir['y'])
             else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y':[ir['y']]}
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
 
         avgX1 = 0
         avgY1 = 0
         avgX2 = 0
         avgY2 = 0
 
+        # calc average x/y of the two biggest lights
         if biggest_id1 > -1 and biggest_id2 > -1:
             xVals1 = rtu_values[biggest_id1]['x']
             yVals1 = rtu_values[biggest_id1]['y']
-            avgX1 = float(sum(xVals1))/len(xVals1) if len(xVals1) > 0 else float('nan')
-            avgY1 = float(sum(yVals1))/len(yVals1) if len(yVals1) > 0 else float('nan')
+
+            if len(xVals1) > 0:
+                avgX1 = float(sum(xVals1))/len(xVals1)
+            else:
+                avgX1 = float('nan')
+
+            if len(yVals1) > 0:
+                avgY1 = float(sum(yVals1))/len(yVals1)
+            else:
+                avgY1 = float('nan')
 
             xVals2 = rtu_values[biggest_id2]['x']
             yVals2 = rtu_values[biggest_id2]['y']
-            avgX2 = float(sum(xVals2))/len(xVals2) if len(xVals2) > 0 else float('nan')
-            avgY2 = float(sum(yVals2))/len(yVals2) if len(yVals2) > 0 else float('nan')
+
+            if len(xVals2) > 0:
+                avgX2 = float(sum(xVals2))/len(xVals2)
+            else:
+                avgX2 = float('nan')
+
+            if len(yVals2) > 0:
+                avgY2 = float(sum(yVals2))/len(yVals2)
+            else:
+                avgY2 = float('nan')
 
         return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
 
@@ -279,7 +322,7 @@ if __name__ == '__main__':
     layout = QtGui.QGridLayout()
     cw.setLayout(layout)
 
-    ## Create an empty flowchart with a single input and output
+    # Create an empty flowchart with a single input and output
     fc = Flowchart(terminals={
         'dataIn': {'io': 'in'},
         'dataOut': {'io': 'out'}
@@ -290,7 +333,7 @@ if __name__ == '__main__':
 
     pw1 = pg.PlotWidget()
     layout.addWidget(pw1, 0, 1)
-    pw1.setYRange(0,1024)
+    pw1.setYRange(0, 1024)
 
     pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
     pw1Node.setPlot(pw1)
