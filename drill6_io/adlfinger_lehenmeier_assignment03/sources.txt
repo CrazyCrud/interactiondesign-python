@@ -1,0 +1,2 @@
+http://wiiphysics.site88.net/physics.html
+https://github.com/lcampagn/pyqtgraph/tree/master/examples
