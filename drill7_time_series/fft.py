@@ -20,17 +20,11 @@ class AnalyzeNode(Node):
         Node.__init__(self, name, terminals=terminals)
 
     def process(self, dataIn):
-        sampling_rate = 150.0
-        n = len(dataIn) # length of the signal
-        k = np.arange(n)
-        T = n / sampling_rate
-        frq = k / T # two sides frequency range
-        frq = frq[range(n / 2)] # one side frequency range
+        data_length = len(dataIn)
+        frequency_spectrum = np.fft.fft(dataIn) / data_length # fft computing and normalization
+        frequency_spectrum = frequency_spectrum[range(data_length / 2)]
 
-        Y = np.fft.fft(dataIn) / n # fft computing and normalization
-        Y = Y[range(n / 2)]
-
-        return {'dataOut': np.abs(Y)}
+        return {'dataOut': np.abs(frequency_spectrum)}
 
 fclib.registerNodeType(AnalyzeNode, [('Data',)])
 
