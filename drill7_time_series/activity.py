@@ -23,63 +23,37 @@ def main():
     sys.exit(app.exec_())
 
 
-class AnalyzeNode(Node):
-    nodeName = "AnalyzeNode"
+class ActivityNode(Node):
+    nodeName = "ActivityNode"
 
     def __init__(self, name):
         terminals = {
-            'dataIn': dict(io='in'),
-            'dataOut': dict(io='out'),
+            'accelX': dict(io='in'),
+            'accelY': dict(io='in'),
+            'accelZ': dict(io='in'),
         }
 
         Node.__init__(self, name, terminals=terminals)
 
-    def process(self, dataIn):
-        data_length = len(dataIn)
+    def process(self, accelX, accelY, accelZ):
+        data_x_length = len(accelX)
+        data_y_length = len(accelY)
+        data_z_length = len(accelZ)
+        """
         frequency_spectrum = np.fft.fft(dataIn) / data_length # fft computing and normalization
         frequency_spectrum = frequency_spectrum[range(data_length / 2)]
 
         output =  np.abs(frequency_spectrum)
+        """
 
-        return {'dataOut': output}
-
-
-fclib.registerNodeType(AnalyzeNode, [('Data',)])
-
-
-class NoiseNode(CtrlNode):
-    nodeName = "NoiseNode"
-    uiTemplate = [
-        ('noise',  'spin', {'value': 5, 'step': 1.0, 'range': [0.0, 128.0]}),
-    ]
-
-    def __init__(self, name):
-        terminals = {
-            'dataIn': dict(io='in'),
-            'dataOut': dict(io='out'),
-        }
-
-        CtrlNode.__init__(self, name, terminals=terminals)
-
-    def process(self, dataIn):
-        size = int(self.ctrls['noise'].value())
-        for i in xrange(len(dataIn)):
-            dataIn[i] = dataIn[i] + (size * randint(-500, 500))
-        output = dataIn
-        return {'dataOut': output}
-
-    def setBufferValue(self, value):
-        self.ctrls['noise'].setValue(value)
-
-
-fclib.registerNodeType(NoiseNode, [('Data',)])
+fclib.registerNodeType(ActivityNode, [('Data',)])
 
 
 class Demo(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Demo, self).__init__()
 
-        self.setWindowTitle("Fourier Transformation")
+        self.setWindowTitle("Wiimote Activity")
         self.showFullScreen()
 
         self.layout = QtGui.QGridLayout()
@@ -90,16 +64,25 @@ class Demo(QtGui.QWidget):
             'dataOut': {'io': 'out'}
         })
 
-        self.layout.addWidget(fc.widget(), 0, 0, 2, 1)
+        self.layout.addWidget(fc.widget(), 0, 0, 4, 1)
 
         pwX = pg.PlotWidget()
         pwY = pg.PlotWidget()
         pwZ = pg.PlotWidget()
-        pwX.getPlotItem().setLabel('left', text='Amplitude')
-        pwY.getPlotItem().setLabel('left', text='Amplitude')
-        pwZ.getPlotItem().setLabel('bottom', text='F(Hz)')
+        pwX.getPlotItem().hideAxis('bottom')
+        pwY.getPlotItem().hideAxis('bottom')
+        pwZ.getPlotItem().hideAxis('bottom')
+
+        self.label = QtGui.QLabel()
+        self.label.setText("No activity yet...")
+        font = QtGui.QFont("Arial")
+        font.setPointSize(32)
+        self.label.setFont(font)
+
         self.layout.addWidget(pwX, 0, 1)
         self.layout.addWidget(pwY, 1, 1)
+        self.layout.addWidget(pwZ, 2, 1)
+        self.layout.addWidget(self.label, 3,1)
 
         sampling_rate = 150.0;
         sampling_interval = 1.0 / sampling_rate; # Abtastfrequenz f = (1/t)
@@ -110,18 +93,44 @@ class Demo(QtGui.QWidget):
 
         fc.setInput(dataIn=data)
 
-        pwXNode = fc.createNode('PlotWidget', pos=(0, -150))
+        pwXNode = fc.createNode('PlotWidget', pos=(-150, -150))
         pwXNode.setPlot(pwX)
 
-        pwYNode = fc.createNode('PlotWidget', pos=(150, -150))
+        pwYNode = fc.createNode('PlotWidget', pos=(0, -150))
         pwYNode.setPlot(pwY)
 
-        fNode = fc.createNode('AnalyzeNode', pos=(0, 0))
+        pwZNode = fc.createNode('PlotWidget', pos=(150, -150))
+        pwZNode.setPlot(pwZ)
 
-        fc.connectTerminals(fc['dataIn'], fNode['dataIn'])
+        activityNode = fc.createNode('ActivityNode', pos=(0, 150))
+
+        """
+        wiimoteNode = fc.createNode('Wiimote', pos=(-300, 0))
+        bufferXNode = fc.createNode('Buffer', pos=(-150, 0))
+        bufferYNode = fc.createNode('Buffer', pos=(0, 0))
+        bufferZNode = fc.createNode('Buffer', pos=(150, 0))
+        """
+
+        #dataX = dataY = dataZ = data
+
         fc.connectTerminals(fc['dataIn'], pwXNode['In'])
-        fc.connectTerminals(fNode['dataOut'], pwYNode['In'])
-        fc.connectTerminals(fNode['dataOut'], fc['dataOut'])
+        fc.connectTerminals(fc['dataIn'], pwYNode['In'])
+        fc.connectTerminals(fc['dataIn'], pwZNode['In'])
+        fc.connectTerminals(fc['dataIn'], activityNode['accelX'])
+        fc.connectTerminals(fc['dataIn'], activityNode['accelY'])
+        fc.connectTerminals(fc['dataIn'], activityNode['accelZ'])
+
+        """
+        fc.connectTerminals(wiimoteNode['accelX'], bufferXNode['dataIn'])
+        fc.connectTerminals(wiimoteNode['accelY'], bufferYNode['dataIn'])
+        fc.connectTerminals(wiimoteNode['accelZ'], bufferZNode['dataIn'])
+        fc.connectTerminals(bufferXNode['dataOut'], pwXNode['In'])
+        fc.connectTerminals(bufferYNode['dataOut'], pwYNode['In'])
+        fc.connectTerminals(bufferZNode['dataOut'], pwZNode['In'])
+        fc.connectTerminals(bufferXNode['dataOut'], activityNode['accelX'])
+        fc.connectTerminals(bufferYNode['dataOut'], activityNode['accelY'])
+        fc.connectTerminals(bufferZNode['dataOut'], activityNode['accelZ'])
+        """
 
     def update(self):
         pass
