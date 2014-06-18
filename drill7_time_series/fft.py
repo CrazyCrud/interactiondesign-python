@@ -6,6 +6,21 @@ from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 from random import randint
+import sys
+import time
+
+
+def main():
+    app = QtGui.QApplication(sys.argv)
+    demo = Demo()
+    demo.show()
+
+    """
+    while True:
+        demo.update()
+        time.sleep(0.20)
+    """
+    sys.exit(app.exec_())
 
 
 class AnalyzeNode(Node):
@@ -24,7 +39,10 @@ class AnalyzeNode(Node):
         frequency_spectrum = np.fft.fft(dataIn) / data_length # fft computing and normalization
         frequency_spectrum = frequency_spectrum[range(data_length / 2)]
 
-        return {'dataOut': np.abs(frequency_spectrum)}
+        output =  np.abs(frequency_spectrum)
+
+        return {'dataOut': output}
+
 
 fclib.registerNodeType(AnalyzeNode, [('Data',)])
 
@@ -56,58 +74,61 @@ class NoiseNode(CtrlNode):
 
 fclib.registerNodeType(NoiseNode, [('Data',)])
 
-app = QtGui.QApplication([])
 
-win = QtGui.QMainWindow()
-cw = QtGui.QWidget()
-win.setCentralWidget(cw)
-layout = QtGui.QGridLayout()
-cw.setLayout(layout)
+class Demo(QtGui.QWidget):
+    def __init__(self, parent=None):
+        super(Demo, self).__init__()
 
-fc = Flowchart(terminals={
-    'dataIn': {'io': 'in'},
-    'dataOut': {'io': 'out'}
-})
-w = fc.widget()
+        self.setWindowTitle("Fourier Transformation")
+        self.showFullScreen()
 
-layout.addWidget(fc.widget(), 0, 0, 2, 1)
+        self.layout = QtGui.QGridLayout()
+        self.setLayout(self.layout)
 
-pw1 = pg.PlotWidget()
-pw2 = pg.PlotWidget()
-pw1.getPlotItem().setLabel('left', text='Amplitude')
-pw1.getPlotItem().setLabel('bottom', text='Time')
-pw2.getPlotItem().setLabel('left', text='Y(freq)')
-pw2.getPlotItem().setLabel('bottom', text='F(Hz)')
-layout.addWidget(pw1, 0, 1)
-layout.addWidget(pw2, 1, 1)
+        fc = Flowchart(terminals={
+            'dataIn': {'io': 'in'},
+            'dataOut': {'io': 'out'}
+        })
 
-win.show()
+        self.layout.addWidget(fc.widget(), 0, 0, 2, 1)
 
-sampling_rate = 150.0;
-sampling_interval = 1.0 / sampling_rate; # Abtastfrequenz f = (1/t)
-time_vector = np.arange(0, 1, sampling_interval)
+        pw1 = pg.PlotWidget()
+        pw2 = pg.PlotWidget()
+        pw1.getPlotItem().setLabel('left', text='Amplitude')
+        pw1.getPlotItem().setLabel('bottom', text='Time')
+        pw2.getPlotItem().setLabel('left', text='Y(freq)')
+        pw2.getPlotItem().setLabel('bottom', text='F(Hz)')
+        self.layout.addWidget(pw1, 0, 1)
+        self.layout.addWidget(pw2, 1, 1)
 
-signal_frequency = 5.5;
-data = np.sin(2 * np.pi * signal_frequency * time_vector)
-#data = np.sin(np.linspace(0, 100, 10) * 2)
+        sampling_rate = 150.0;
+        sampling_interval = 1.0 / sampling_rate; # Abtastfrequenz f = (1/t)
+        time_vector = np.arange(0, 1, sampling_interval)
 
-fc.setInput(dataIn=data)
+        signal_frequency = 10;
+        data = np.sin(2 * np.pi * signal_frequency * time_vector)
 
-pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
-pw1Node.setPlot(pw1)
+        fc.setInput(dataIn=data)
 
-pw2Node = fc.createNode('PlotWidget', pos=(150, -150))
-pw2Node.setPlot(pw2)
+        pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
+        pw1Node.setPlot(pw1)
 
-fNode = fc.createNode('AnalyzeNode', pos=(0, 0))
+        pw2Node = fc.createNode('PlotWidget', pos=(150, -150))
+        pw2Node.setPlot(pw2)
 
-fc.connectTerminals(fc['dataIn'], fNode['dataIn'])
-fc.connectTerminals(fc['dataIn'], pw1Node['In'])
-fc.connectTerminals(fNode['dataOut'], pw2Node['In'])
-fc.connectTerminals(fNode['dataOut'], fc['dataOut'])
+        fNode = fc.createNode('AnalyzeNode', pos=(0, 0))
 
+        fc.connectTerminals(fc['dataIn'], fNode['dataIn'])
+        fc.connectTerminals(fc['dataIn'], pw1Node['In'])
+        fc.connectTerminals(fNode['dataOut'], pw2Node['In'])
+        fc.connectTerminals(fNode['dataOut'], fc['dataOut'])
 
+    def update(self):
+        pass
 
-import sys
-if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-    app.exec_()
+    def keyPressEvent(self, ev):
+        if ev.key() == QtCore.Qt.Key_Escape:
+            self.close()
+
+if __name__ == '__main__':
+    main()
