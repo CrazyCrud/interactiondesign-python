@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from pyqtgraph.flowchart import Flowchart
-from pyqtgraph.flowchart.library.common import Node
+from pyqtgraph.flowchart.library.common import CtrlNode
 import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
@@ -21,8 +21,12 @@ def main():
     sys.exit(app.exec_())
 
 
-class ActivityNode(Node):
+class ActivityNode(CtrlNode):
     nodeName = "ActivityNode"
+    uiTemplate = [
+        ('rate', 'spin', {
+            'value': 150.0, 'step': 1.0, 'range': [0.0, 1000.0]}),
+    ]
 
     def __init__(self, name):
         terminals = {
@@ -32,12 +36,22 @@ class ActivityNode(Node):
             'activity': dict(io='out'),
         }
 
-        Node.__init__(self, name, terminals=terminals)
+        CtrlNode.__init__(self, name, terminals=terminals)
 
     def process(self, accelX, accelY, accelZ):
+        sampling_rate = int(self.ctrls['rate'].value())
+        sampling_interval = 1.0 / sampling_rate
+        time_vector = np.arange(0, 1, sampling_interval)
+
         data_x_length = len(accelX)
         data_y_length = len(accelY)
         data_z_length = len(accelZ)
+
+        """
+        accelX = np.sin(accelX * time_vector)
+        accelY = np.sin(accelY * time_vector)
+        accelZ = np.sin(accelZ * time_vector)
+        """
 
         frequency_spectrum_x = np.fft.fft(accelX) / data_x_length
         frequency_spectrum_x = frequency_spectrum_x[range(data_x_length / 2)]
@@ -45,13 +59,10 @@ class ActivityNode(Node):
         frequency_spectrum_y = frequency_spectrum_y[range(data_y_length / 2)]
         frequency_spectrum_z = np.fft.fft(accelZ) / data_z_length
         frequency_spectrum_z = frequency_spectrum_z[range(data_z_length / 2)]
-        """
-        frequency_spectrum = np.fft.fft(dataIn) / data_length
-            # fft computing and normalization
-        frequency_spectrum = frequency_spectrum[range(data_length / 2)]
 
-        output =  np.abs(frequency_spectrum)
-        """
+        frequency_spectrum_x = np.abs(frequency_spectrum_x)
+        frequency_spectrum_y = np.abs(frequency_spectrum_y)
+        frequency_spectrum_z = np.abs(frequency_spectrum_z)
 
         output = 'No activity yet...'
         return {'activity': output}
@@ -80,8 +91,11 @@ class Demo(QtGui.QWidget):
         pwY = pg.PlotWidget()
         pwZ = pg.PlotWidget()
         pwX.getPlotItem().hideAxis('bottom')
+        # pwX.setYRange(0, 1024)
         pwY.getPlotItem().hideAxis('bottom')
+        # pwY.setYRange(0, 1024)
         pwZ.getPlotItem().hideAxis('bottom')
+        # pwZ.setYRange(0, 1024)
 
         self.label = QtGui.QLabel()
         self.label.setText("No activity yet...")
