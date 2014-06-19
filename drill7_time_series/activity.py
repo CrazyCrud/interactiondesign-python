@@ -7,7 +7,8 @@ import pyqtgraph as pg
 import numpy as np
 import sys
 import time
-
+import wiimote
+from wiimote_node import *
 
 def main():
     app = QtGui.QApplication(sys.argv)
@@ -127,37 +128,56 @@ class Demo(QtGui.QWidget):
         self.activityNode = fc.createNode('ActivityNode', pos=(0, 150))
 
         # Einkommentieren falls mit Wii gearbeitet wird
-        """
-        wiimoteNode = fc.createNode('Wiimote', pos=(-300, 0))
-        bufferXNode = fc.createNode('Buffer', pos=(-150, 0))
-        bufferYNode = fc.createNode('Buffer', pos=(0, 0))
-        bufferZNode = fc.createNode('Buffer', pos=(150, 0))
-        """
+        #"""
+        self.wiimoteNode = fc.createNode('Wiimote', pos=(-300, 0))
+        bufferXNode = fc.createNode('Buffer', pos=(-150, -300))
+        bufferYNode = fc.createNode('Buffer', pos=(0, -300))
+        bufferZNode = fc.createNode('Buffer', pos=(150, -300))
+        #"""
 
         # Auskommentieren falls mit Wii gearbeitet wird
+        '''
         fc.connectTerminals(fc['dataIn'], pwXNode['In'])
         fc.connectTerminals(fc['dataIn'], pwYNode['In'])
         fc.connectTerminals(fc['dataIn'], pwZNode['In'])
         fc.connectTerminals(fc['dataIn'], self.activityNode['accelX'])
         fc.connectTerminals(fc['dataIn'], self.activityNode['accelY'])
         fc.connectTerminals(fc['dataIn'], self.activityNode['accelZ'])
-
+        '''
         # Einkommentieren falls mit Wii gearbeitet wird
-        """
-        fc.connectTerminals(wiimoteNode['accelX'], bufferXNode['dataIn'])
-        fc.connectTerminals(wiimoteNode['accelY'], bufferYNode['dataIn'])
-        fc.connectTerminals(wiimoteNode['accelZ'], bufferZNode['dataIn'])
+        #"""
+        fc.connectTerminals(self.wiimoteNode['accelX'], bufferXNode['dataIn'])
+        fc.connectTerminals(self.wiimoteNode['accelY'], bufferYNode['dataIn'])
+        fc.connectTerminals(self.wiimoteNode['accelZ'], bufferZNode['dataIn'])
         fc.connectTerminals(bufferXNode['dataOut'], pwXNode['In'])
         fc.connectTerminals(bufferYNode['dataOut'], pwYNode['In'])
         fc.connectTerminals(bufferZNode['dataOut'], pwZNode['In'])
-        fc.connectTerminals(bufferXNode['dataOut'], activityNode['accelX'])
-        fc.connectTerminals(bufferYNode['dataOut'], activityNode['accelY'])
-        fc.connectTerminals(bufferZNode['dataOut'], activityNode['accelZ'])
-        """
+        fc.connectTerminals(bufferXNode['dataOut'], self.activityNode['accelX'])
+        fc.connectTerminals(bufferYNode['dataOut'], self.activityNode['accelY'])
+        fc.connectTerminals(bufferZNode['dataOut'], self.activityNode['accelZ'])
+        #"""
+
+        self.getWiimote()
+
+    # connect to wiimote and config wiimote node
+    def getWiimote(self):
+        if len(sys.argv) == 1:
+            addr, name = wiimote.find()[0]
+        elif len(sys.argv) == 2:
+            addr = sys.argv[1]
+            name = None
+        elif len(sys.argv) == 3:
+            addr, name = sys.argv[1:3]
+        print("Connecting to %s (%s)" % (name, addr))
+
+        self.wiimoteNode.text.setText(addr)
+        self.wiimoteNode.connect_wiimote()
 
     def update(self):
         outputValues = self.activityNode.outputValues()
-        self.label.setText(outputValues['activity'])
+
+        if outputValues['activity'] is not None:
+            self.label.setText(outputValues['activity'])
         pg.QtGui.QApplication.processEvents()
 
     def keyPressEvent(self, ev):
