@@ -25,12 +25,11 @@ def main():
 
 class ActivityNode(CtrlNode):
     nodeName = "ActivityNode"
-    """
     uiTemplate = [
         ('rate', 'spin', {
             'value': 150.0, 'step': 1.0, 'range': [0.0, 1000.0]}),
     ]
-    """
+
     def __init__(self, name):
         terminals = {
             'accelX': dict(io='in'),
@@ -48,6 +47,14 @@ class ActivityNode(CtrlNode):
         data_x_length = len(accelX)
         data_y_length = len(accelY)
         data_z_length = len(accelZ)
+
+        """
+        interval = np.arange(data_x_length)
+        sampling_rate = int(self.ctrls['rate'].value())
+        step = data_x_length / sampling_rate
+        frequency_range = interval / step
+        frequency_range = frequency_range[range(data_x_length / 2)]
+        """
 
         """
         sampling_rate = int(self.ctrls['rate'].value())
