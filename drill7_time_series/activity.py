@@ -25,11 +25,12 @@ def main():
 
 class ActivityNode(CtrlNode):
     nodeName = "ActivityNode"
+    """
     uiTemplate = [
         ('rate', 'spin', {
             'value': 150.0, 'step': 1.0, 'range': [0.0, 1000.0]}),
     ]
-
+    """
     def __init__(self, name):
         terminals = {
             'accelX': dict(io='in'),
@@ -44,17 +45,21 @@ class ActivityNode(CtrlNode):
         CtrlNode.__init__(self, name, terminals=terminals)
 
     def process(self, accelX, accelY, accelZ):
-        sampling_rate = int(self.ctrls['rate'].value())
-        sampling_interval = 1.0 / sampling_rate
-        time_vector = np.arange(0, 1, sampling_interval)
-
         data_x_length = len(accelX)
         data_y_length = len(accelY)
         data_z_length = len(accelZ)
 
+        """
+        sampling_rate = int(self.ctrls['rate'].value())
+        sampling_interval = 1.0 / sampling_rate
+        time_vector = np.arange(0, 1, sampling_interval)
+
         accelX = np.sin(accelX * time_vector)
         accelY = np.sin(accelY * time_vector)
         accelZ = np.sin(accelZ * time_vector)
+        """
+
+        accelX, accelY, accelZ = self.filterData(accelX, accelY, accelZ)
 
         frequency_spectrum_x = np.fft.fft(accelX) / data_x_length
         frequency_spectrum_x = frequency_spectrum_x[range(data_x_length / 2)]
@@ -67,23 +72,18 @@ class ActivityNode(CtrlNode):
         frequency_spectrum_y = np.abs(frequency_spectrum_y)
         frequency_spectrum_z = np.abs(frequency_spectrum_z)
 
-        frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z = \
-            self.filterData(
-                frequency_spectrum_x, frequency_spectrum_y,
-                frequency_spectrum_z)
-
         output = self.computeFrequencies(
             frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z)
         return {'activity': output}
 
-    def filterData(self, fspec_x, fspec_y, fspec_z):
-        kernel = [0 for i in range(0, len(fspec_x))]
+    def filterData(self, data_x, data_y, data_z):
+        kernel = [0 for i in range(0, len(data_x))]
         for i in range(45, 55):
             kernel[i] = 0.1
-        fspec_x = np.convolve(fspec_x, kernel, 'valid')
-        fspec_y = np.convolve(fspec_y, kernel, 'valid')
-        fspec_z = np.convolve(fspec_z, kernel, 'valid')
-        return fspec_x, fspec_y, fspec_z
+        data_x = np.convolve(data_x, kernel, 'same')
+        data_y = np.convolve(data_y, kernel, 'same')
+        data_z = np.convolve(data_z, kernel, 'same')
+        return data_x, data_y, data_z
 
     def computeFrequencies(self, fspec_x, fspec_y, fspec_z):
         activity = self.activities['none']
