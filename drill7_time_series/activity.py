@@ -35,8 +35,7 @@ class AnalyzeNode(Node):
 
     def process(self, dataIn):
         data_length = len(dataIn)
-        #dataIn = dataIn / 1000.0
-        #frequency_spectrum = np.fft.fft(sin(dataIn), n=128) / 128.0 # fft computing and normalization
+        dataIn = dataIn / float(max(dataIn)) # Scaling
         frequency_spectrum = np.fft.fft(dataIn, n=128) / 128.0 # fft computing and normalization
         frequency_spectrum = frequency_spectrum[range(128 / 2)]
 
