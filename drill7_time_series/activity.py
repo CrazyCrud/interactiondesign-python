@@ -8,7 +8,8 @@ import numpy as np
 import sys
 import time
 import wiimote
-from wiimote_node import *
+import wiimote_node
+
 
 def main():
     app = QtGui.QApplication(sys.argv)
@@ -37,6 +38,9 @@ class ActivityNode(CtrlNode):
             'activity': dict(io='out'),
         }
 
+        self.activities = {
+            'walking': 'You\'re walking', 'lying': 'You\'re lying',
+            'running': 'You\'re running', 'none': 'No activity yet...'}
         CtrlNode.__init__(self, name, terminals=terminals)
 
     def process(self, accelX, accelY, accelZ):
@@ -48,11 +52,9 @@ class ActivityNode(CtrlNode):
         data_y_length = len(accelY)
         data_z_length = len(accelZ)
 
-        """
         accelX = np.sin(accelX * time_vector)
         accelY = np.sin(accelY * time_vector)
         accelZ = np.sin(accelZ * time_vector)
-        """
 
         frequency_spectrum_x = np.fft.fft(accelX) / data_x_length
         frequency_spectrum_x = frequency_spectrum_x[range(data_x_length / 2)]
@@ -65,8 +67,27 @@ class ActivityNode(CtrlNode):
         frequency_spectrum_y = np.abs(frequency_spectrum_y)
         frequency_spectrum_z = np.abs(frequency_spectrum_z)
 
-        output = 'No activity yet...'
+        frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z = \
+            self.filterData(
+                frequency_spectrum_x, frequency_spectrum_y,
+                frequency_spectrum_z)
+
+        output = self.computeFrequencies(
+            frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z)
         return {'activity': output}
+
+    def filterData(self, fspec_x, fspec_y, fspec_z):
+        kernel = [0 for i in range(0, len(fspec_x))]
+        for i in range(45, 55):
+            kernel[i] = 0.1
+        fspec_x = np.convolve(fspec_x, kernel, 'valid')
+        fspec_y = np.convolve(fspec_y, kernel, 'valid')
+        fspec_z = np.convolve(fspec_z, kernel, 'valid')
+        return fspec_x, fspec_y, fspec_z
+
+    def computeFrequencies(self, fspec_x, fspec_y, fspec_z):
+        activity = self.activities['none']
+        return activity
 
 fclib.registerNodeType(ActivityNode, [('Data',)])
 
@@ -152,14 +173,16 @@ class Demo(QtGui.QWidget):
         fc.connectTerminals(bufferXNode['dataOut'], pwXNode['In'])
         fc.connectTerminals(bufferYNode['dataOut'], pwYNode['In'])
         fc.connectTerminals(bufferZNode['dataOut'], pwZNode['In'])
-        fc.connectTerminals(bufferXNode['dataOut'], self.activityNode['accelX'])
-        fc.connectTerminals(bufferYNode['dataOut'], self.activityNode['accelY'])
-        fc.connectTerminals(bufferZNode['dataOut'], self.activityNode['accelZ'])
+        fc.connectTerminals(
+            bufferXNode['dataOut'], self.activityNode['accelX'])
+        fc.connectTerminals(
+            bufferYNode['dataOut'], self.activityNode['accelY'])
+        fc.connectTerminals(
+            bufferZNode['dataOut'], self.activityNode['accelZ'])
         #"""
 
         self.getWiimote()
 
-    # connect to wiimote and config wiimote node
     def getWiimote(self):
         if len(sys.argv) == 1:
             addr, name = wiimote.find()[0]
