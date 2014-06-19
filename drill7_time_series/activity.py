@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from pyqtgraph.flowchart import Flowchart
-from pyqtgraph.flowchart.library.common import CtrlNode
+from pyqtgraph.flowchart.library.common import CtrlNode, Node
 import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
@@ -22,12 +22,37 @@ def main():
 
     sys.exit(app.exec_())
 
+class AnalyzeNode(Node):
+    nodeName = "AnalyzeNode"
+
+    def __init__(self, name):
+        terminals = {
+            'dataIn': dict(io='in'),
+            'dataOut': dict(io='out'),
+        }
+
+        Node.__init__(self, name, terminals=terminals)
+
+    def process(self, dataIn):
+        data_length = len(dataIn)
+        #dataIn = dataIn / 1000.0
+        #frequency_spectrum = np.fft.fft(sin(dataIn), n=128) / 128.0 # fft computing and normalization
+        frequency_spectrum = np.fft.fft(dataIn, n=128) / 128.0 # fft computing and normalization
+        frequency_spectrum = frequency_spectrum[range(128 / 2)]
+
+        output =  np.abs(frequency_spectrum)
+        print "fft"
+        print output
+        return {'dataOut': output}
+
+
+fclib.registerNodeType(AnalyzeNode, [('Data',)])
 
 class ActivityNode(CtrlNode):
     nodeName = "ActivityNode"
     uiTemplate = [
         ('rate', 'spin', {
-            'value': 150.0, 'step': 1.0, 'range': [0.0, 1000.0]}),
+            'value': 128.0, 'step': 1.0, 'range': [0.0, 1000.0]}),
     ]
 
     def __init__(self, name):
@@ -66,7 +91,7 @@ class ActivityNode(CtrlNode):
         accelZ = np.sin(accelZ * time_vector)
         """
 
-        accelX, accelY, accelZ = self.filterData(accelX, accelY, accelZ)
+        #accelX, accelY, accelZ = self.filterData(accelX, accelY, accelZ)
 
         frequency_spectrum_x = np.fft.fft(accelX) / data_x_length
         frequency_spectrum_x = frequency_spectrum_x[range(data_x_length / 2)]
@@ -109,22 +134,22 @@ class Demo(QtGui.QWidget):
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        fc = Flowchart(terminals={
+        self.fc = Flowchart(terminals={
             'dataIn': {'io': 'in'},
             'dataOut': {'io': 'out'}
         })
 
-        self.layout.addWidget(fc.widget(), 0, 0, 4, 1)
+        self.layout.addWidget(self.fc.widget(), 0, 0, 4, 1)
 
         pwX = pg.PlotWidget()
         pwY = pg.PlotWidget()
         pwZ = pg.PlotWidget()
         pwX.getPlotItem().hideAxis('bottom')
-        # pwX.setYRange(0, 1024)
+        pwX.setYRange(300, 700)
         pwY.getPlotItem().hideAxis('bottom')
-        # pwY.setYRange(0, 1024)
+        pwY.setYRange(300, 700)
         pwZ.getPlotItem().hideAxis('bottom')
-        # pwZ.setYRange(0, 1024)
+        pwZ.setYRange(300, 700)
 
         self.label = QtGui.QLabel()
         self.label.setText("No activity yet...")
@@ -142,53 +167,87 @@ class Demo(QtGui.QWidget):
         time_vector = np.arange(0, 1, sampling_interval)
         signal_frequency = 10
         data = np.sin(2 * np.pi * signal_frequency * time_vector)
-        fc.setInput(dataIn=data)
 
-        pwXNode = fc.createNode('PlotWidget', pos=(-150, -150))
+        self.fc.setInput(dataIn=data)
+
+        pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
         pwXNode.setPlot(pwX)
 
-        pwYNode = fc.createNode('PlotWidget', pos=(0, -150))
+        pwYNode = self.fc.createNode('PlotWidget', pos=(0, -150))
         pwYNode.setPlot(pwY)
 
-        pwZNode = fc.createNode('PlotWidget', pos=(150, -150))
+        pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
         pwZNode.setPlot(pwZ)
 
-        self.activityNode = fc.createNode('ActivityNode', pos=(0, 150))
+        self.activityNode = self.fc.createNode('ActivityNode', pos=(0, 150))
 
-        # Einkommentieren falls mit Wii gearbeitet wird
-        #"""
-        self.wiimoteNode = fc.createNode('Wiimote', pos=(-300, 0))
-        bufferXNode = fc.createNode('Buffer', pos=(-150, -300))
-        bufferYNode = fc.createNode('Buffer', pos=(0, -300))
-        bufferZNode = fc.createNode('Buffer', pos=(150, -300))
-        #"""
+        self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
+        bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
+        bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
+        bufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
 
-        # Auskommentieren falls mit Wii gearbeitet wird
-        '''
-        fc.connectTerminals(fc['dataIn'], pwXNode['In'])
-        fc.connectTerminals(fc['dataIn'], pwYNode['In'])
-        fc.connectTerminals(fc['dataIn'], pwZNode['In'])
-        fc.connectTerminals(fc['dataIn'], self.activityNode['accelX'])
-        fc.connectTerminals(fc['dataIn'], self.activityNode['accelY'])
-        fc.connectTerminals(fc['dataIn'], self.activityNode['accelZ'])
-        '''
-        # Einkommentieren falls mit Wii gearbeitet wird
-        #"""
-        fc.connectTerminals(self.wiimoteNode['accelX'], bufferXNode['dataIn'])
-        fc.connectTerminals(self.wiimoteNode['accelY'], bufferYNode['dataIn'])
-        fc.connectTerminals(self.wiimoteNode['accelZ'], bufferZNode['dataIn'])
-        fc.connectTerminals(bufferXNode['dataOut'], pwXNode['In'])
-        fc.connectTerminals(bufferYNode['dataOut'], pwYNode['In'])
-        fc.connectTerminals(bufferZNode['dataOut'], pwZNode['In'])
-        fc.connectTerminals(
+        self.fc.connectTerminals(self.wiimoteNode['accelX'], bufferXNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelY'], bufferYNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelZ'], bufferZNode['dataIn'])
+        self.fc.connectTerminals(bufferXNode['dataOut'], pwXNode['In'])
+        self.fc.connectTerminals(bufferYNode['dataOut'], pwYNode['In'])
+        self.fc.connectTerminals(bufferZNode['dataOut'], pwZNode['In'])
+        self.fc.connectTerminals(
             bufferXNode['dataOut'], self.activityNode['accelX'])
-        fc.connectTerminals(
+        self.fc.connectTerminals(
             bufferYNode['dataOut'], self.activityNode['accelY'])
-        fc.connectTerminals(
+        self.fc.connectTerminals(
             bufferZNode['dataOut'], self.activityNode['accelZ'])
-        #"""
+
+        self.createCompareNode()
 
         self.getWiimote()
+
+    def createCompareNode(self):
+        compPwX = pg.PlotWidget()
+        compPwY = pg.PlotWidget()
+        compPwZ = pg.PlotWidget()
+        #compPwX.setYRange(300, 700)
+        #compPwY.setYRange(300, 700)
+        #compPwZ.setYRange(300, 700)
+
+        self.layout.addWidget(compPwX, 3, 1)
+        self.layout.addWidget(compPwY, 4, 1)
+        self.layout.addWidget(compPwZ, 5, 1)
+
+        pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
+        compPwX.setXRange(0, 200)
+        pwXNode.setPlot(compPwX)
+
+        pwYNode = self.fc.createNode('PlotWidget', pos=(0, -150))
+        pwYNode.setPlot(compPwY)
+
+        pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
+        pwZNode.setPlot(compPwZ)
+
+        bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
+        bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
+        bufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
+
+        analyzeXNode = self.fc.createNode('AnalyzeNode', pos=(0, 300))
+        analyzeYNode = self.fc.createNode('AnalyzeNode', pos=(100, 300))
+        analyzeZNode = self.fc.createNode('AnalyzeNode', pos=(200, 300))
+
+        self.fc.connectTerminals(self.wiimoteNode['accelX'], bufferXNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelY'], bufferYNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelZ'], bufferZNode['dataIn'])
+
+        self.fc.connectTerminals(bufferXNode['dataOut'], analyzeXNode['dataIn'])
+        self.fc.connectTerminals(bufferYNode['dataOut'], analyzeYNode['dataIn'])
+        self.fc.connectTerminals(bufferZNode['dataOut'], analyzeZNode['dataIn'])
+
+        self.fc.connectTerminals(
+            analyzeXNode['dataOut'], pwXNode['In'])
+        self.fc.connectTerminals(
+            analyzeYNode['dataOut'], pwYNode['In'])
+        self.fc.connectTerminals(
+            analyzeZNode['dataOut'], pwZNode['In'])
+
 
     def getWiimote(self):
         if len(sys.argv) == 1:

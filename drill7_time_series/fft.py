@@ -41,6 +41,8 @@ class AnalyzeNode(Node):
 
         output =  np.abs(frequency_spectrum)
 
+        print output
+
         return {'dataOut': output}
 
 
@@ -101,24 +103,16 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(pw1, 0, 1)
         self.layout.addWidget(pw2, 1, 1)
 
-        sampling_rate = 100.0
+        sampling_rate = 150.0
         sampling_interval = 1.0 / sampling_rate; # Abtastfrequenz f = (1/t)
         time_vector = np.arange(0, 1, sampling_interval)
 
         signal_frequency = 10
         data = np.sin(2 * np.pi * signal_frequency * time_vector)
 
-        n = len(data) # length of the signal
-        k = np.arange(n)
-        T = n / sampling_rate
-        frq = k / T # two sides frequency range
-        frq = frq[range(n / 2)] # one side frequency range
+        print data
 
-        data_2 = np.random.normal(size=100) * time_vector
-
-        print data_2
-
-        fc.setInput(dataIn=data_2)
+        fc.setInput(dataIn=data)
 
         pw1Node = fc.createNode('PlotWidget', pos=(0, -150))
         pw1Node.setPlot(pw1)
