@@ -31,28 +31,46 @@ class AnalyzeNode(Node):
             'dataOut': dict(io='out'),
         }
 
+        self.ui = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
+        self.sampling_rate_input = QtGui.QSpinBox()
+        self.sampling_rate_input.setMinimum(0)
+        self.sampling_rate_input.setMaximum(80)
+        self.sampling_rate_input.setValue(60)
+        self.sampling_rate_input.valueChanged.connect(self.set_sampling_rate)
+        self.layout.addWidget(self.sampling_rate_input)
+        self.ui.setLayout(self.layout)
+
+        self.callback = None
+
         Node.__init__(self, name, terminals=terminals)
 
     def process(self, dataIn):
-        data_length = len(dataIn)
-        dataIn = dataIn / float(max(dataIn)) # Scaling
-        frequency_spectrum = np.fft.fft(dataIn, n=128) / 128.0 # fft computing and normalization
-        frequency_spectrum = frequency_spectrum[range(128 / 2)]
+        sampling_rate = int(self.sampling_rate_input.value())
+        #data_length = len(dataIn)
+        #dataIn = dataIn / float(max(dataIn)) # Scaling
+        frequency_spectrum = np.fft.fft(dataIn, n=sampling_rate) / sampling_rate
+        frequency_spectrum = frequency_spectrum[range(sampling_rate / 2)]
 
-        output =  np.abs(frequency_spectrum)
-        print "fft"
-        print output
+        output = np.abs(frequency_spectrum)
+
         return {'dataOut': output}
 
+    def update_sampling_rate(self, rate):
+        if self.callback is not None:
+            self.callback(self.sampling_rate_input.value())
+
+    def set_sampling_rate(self, rate):
+        self.sampling_rate_input.setValue(rate)
+
+    def register_callback(self, callback):
+        self.callback = callback
 
 fclib.registerNodeType(AnalyzeNode, [('Data',)])
 
+
 class ActivityNode(CtrlNode):
     nodeName = "ActivityNode"
-    uiTemplate = [
-        ('rate', 'spin', {
-            'value': 128.0, 'step': 1.0, 'range': [0.0, 1000.0]}),
-    ]
 
     def __init__(self, name):
         terminals = {
@@ -62,46 +80,53 @@ class ActivityNode(CtrlNode):
             'activity': dict(io='out'),
         }
 
+        self.ui = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
+        self.sampling_rate_input = QtGui.QSpinBox()
+        self.sampling_rate_input.setMinimum(0)
+        self.sampling_rate_input.setMaximum(80)
+        self.sampling_rate_input.setValue(60)
+        self.sampling_rate_input.valueChanged.connect(self.update_sampling_rate)
+        self.layout.addWidget(self.sampling_rate_input)
+        self.ui.setLayout(self.layout)
+
+        self.callback = None
+
         self.activities = {
             'walking': 'You\'re walking', 'lying': 'You\'re lying',
             'running': 'You\'re running', 'none': 'No activity yet...'}
         CtrlNode.__init__(self, name, terminals=terminals)
 
+    def update_sampling_rate(self, rate):
+        if self.callback is not None:
+            self.callback(self.sampling_rate_input.value())
+
+    def set_sampling_rate(self, rate):
+        self.sampling_rate_input.setValue(rate)
+
+    def register_callback(self, callback):
+        self.callback = callback
+
     def process(self, accelX, accelY, accelZ):
+        sampling_rate = int(self.sampling_rate_input.value())
         data_x_length = len(accelX)
         data_y_length = len(accelY)
         data_z_length = len(accelZ)
 
-        """
-        interval = np.arange(data_x_length)
-        sampling_rate = int(self.ctrls['rate'].value())
-        step = data_x_length / sampling_rate
-        frequency_range = interval / step
-        frequency_range = frequency_range[range(data_x_length / 2)]
-        """
-
-        """
-        sampling_rate = int(self.ctrls['rate'].value())
-        sampling_interval = 1.0 / sampling_rate
-        time_vector = np.arange(0, 1, sampling_interval)
-
-        accelX = np.sin(accelX * time_vector)
-        accelY = np.sin(accelY * time_vector)
-        accelZ = np.sin(accelZ * time_vector)
-        """
-
-        #accelX, accelY, accelZ = self.filterData(accelX, accelY, accelZ)
-
-        frequency_spectrum_x = np.fft.fft(accelX) / data_x_length
-        frequency_spectrum_x = frequency_spectrum_x[range(data_x_length / 2)]
-        frequency_spectrum_y = np.fft.fft(accelY) / data_y_length
-        frequency_spectrum_y = frequency_spectrum_y[range(data_y_length / 2)]
-        frequency_spectrum_z = np.fft.fft(accelZ) / data_z_length
-        frequency_spectrum_z = frequency_spectrum_z[range(data_z_length / 2)]
+        frequency_spectrum_x = np.fft.fft(accelX, n=sampling_rate) / sampling_rate
+        frequency_spectrum_x = frequency_spectrum_x[range(sampling_rate / 2)]
+        frequency_spectrum_y = np.fft.fft(accelY, n=sampling_rate) / sampling_rate
+        frequency_spectrum_y = frequency_spectrum_y[range(sampling_rate / 2)]
+        frequency_spectrum_z = np.fft.fft(accelZ, n=sampling_rate) / sampling_rate
+        frequency_spectrum_z = frequency_spectrum_z[range(sampling_rate / 2)]
 
         frequency_spectrum_x = np.abs(frequency_spectrum_x)
         frequency_spectrum_y = np.abs(frequency_spectrum_y)
         frequency_spectrum_z = np.abs(frequency_spectrum_z)
+
+        frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z = \
+            self.filterData(
+                frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z)
 
         output = self.computeFrequencies(
             frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z)
@@ -140,6 +165,47 @@ class Demo(QtGui.QWidget):
 
         self.layout.addWidget(self.fc.widget(), 0, 0, 4, 1)
 
+        self.createNodes()
+        self.createCompareNode()
+
+        sampling_rate = 60.0
+        self.activityNode.set_update_rate(sampling_rate)
+        self.analyzeXNode.set_update_rate(sampling_rate)
+        self.analyzeYNode.set_update_rate(sampling_rate)
+        self.analyzeZNode.set_update_rate(sampling_rate)
+        #self.updateRate(self.sampling_rate)
+
+        self.getWiimote()
+
+    def getWiimote(self):
+        if len(sys.argv) == 1:
+            addr, name = wiimote.find()[0]
+        elif len(sys.argv) == 2:
+            addr = sys.argv[1]
+            name = None
+        elif len(sys.argv) == 3:
+            addr, name = sys.argv[1:3]
+        print("Connecting to %s (%s)" % (name, addr))
+
+        self.wiimoteNode.text.setText(addr)
+        self.wiimoteNode.connect_wiimote()
+
+    def updateRate(self, rate):
+        self.wiimoteNode.set_update_rate(rate)
+        self.bufferXNode.set_buffersize(rate)
+        self.bufferYNode.set_buffersize(rate)
+        self.bufferZNode.set_buffersize(rate)
+        self.compBufferXNode.set_buffersize(rate)
+        self.compBufferYNode.set_buffersize(rate)
+        self.compBufferZNode.set_buffersize(rate)
+
+    def update(self):
+        outputValues = self.activityNode.outputValues()
+        if outputValues['activity'] is not None:
+            self.label.setText(outputValues['activity'])
+        pg.QtGui.QApplication.processEvents()
+
+    def createNodes(self):
         pwX = pg.PlotWidget()
         pwY = pg.PlotWidget()
         pwZ = pg.PlotWidget()
@@ -161,14 +227,6 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(pwZ, 2, 1)
         self.layout.addWidget(self.label, 3, 1)
 
-        sampling_rate = 150.0
-        sampling_interval = 1.0 / sampling_rate  # Abtastfrequenz f = (1/t)
-        time_vector = np.arange(0, 1, sampling_interval)
-        signal_frequency = 10
-        data = np.sin(2 * np.pi * signal_frequency * time_vector)
-
-        self.fc.setInput(dataIn=data)
-
         pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
         pwXNode.setPlot(pwX)
 
@@ -179,18 +237,19 @@ class Demo(QtGui.QWidget):
         pwZNode.setPlot(pwZ)
 
         self.activityNode = self.fc.createNode('ActivityNode', pos=(0, 150))
+        self.activityNode.register_callback(self.updateRate)
 
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
-        bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
-        bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
-        bufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
+        self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
+        self.bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
+        self.bufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
 
-        self.fc.connectTerminals(self.wiimoteNode['accelX'], bufferXNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelY'], bufferYNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelZ'], bufferZNode['dataIn'])
-        self.fc.connectTerminals(bufferXNode['dataOut'], pwXNode['In'])
-        self.fc.connectTerminals(bufferYNode['dataOut'], pwYNode['In'])
-        self.fc.connectTerminals(bufferZNode['dataOut'], pwZNode['In'])
+        self.fc.connectTerminals(self.wiimoteNode['accelX'], self.bufferXNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelY'], self.bufferYNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelZ'], self.bufferZNode['dataIn'])
+        self.fc.connectTerminals(self.bufferXNode['dataOut'], pwXNode['In'])
+        self.fc.connectTerminals(self.bufferYNode['dataOut'], pwYNode['In'])
+        self.fc.connectTerminals(self.bufferZNode['dataOut'], pwZNode['In'])
         self.fc.connectTerminals(
             bufferXNode['dataOut'], self.activityNode['accelX'])
         self.fc.connectTerminals(
@@ -198,24 +257,16 @@ class Demo(QtGui.QWidget):
         self.fc.connectTerminals(
             bufferZNode['dataOut'], self.activityNode['accelZ'])
 
-        self.createCompareNode()
-
-        self.getWiimote()
-
     def createCompareNode(self):
         compPwX = pg.PlotWidget()
         compPwY = pg.PlotWidget()
         compPwZ = pg.PlotWidget()
-        #compPwX.setYRange(300, 700)
-        #compPwY.setYRange(300, 700)
-        #compPwZ.setYRange(300, 700)
 
         self.layout.addWidget(compPwX, 3, 1)
         self.layout.addWidget(compPwY, 4, 1)
         self.layout.addWidget(compPwZ, 5, 1)
 
         pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
-        compPwX.setXRange(0, 200)
         pwXNode.setPlot(compPwX)
 
         pwYNode = self.fc.createNode('PlotWidget', pos=(0, -150))
@@ -224,21 +275,25 @@ class Demo(QtGui.QWidget):
         pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
         pwZNode.setPlot(compPwZ)
 
-        bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
-        bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
-        bufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
+        self.compBufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
+        self.compBufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
+        self.compBufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
 
-        analyzeXNode = self.fc.createNode('AnalyzeNode', pos=(0, 300))
-        analyzeYNode = self.fc.createNode('AnalyzeNode', pos=(100, 300))
-        analyzeZNode = self.fc.createNode('AnalyzeNode', pos=(200, 300))
+        self.analyzeXNode = self.fc.createNode('AnalyzeNode', pos=(0, 300))
+        self.analyzeYNode = self.fc.createNode('AnalyzeNode', pos=(100, 300))
+        self.analyzeZNode = self.fc.createNode('AnalyzeNode', pos=(200, 300))
 
-        self.fc.connectTerminals(self.wiimoteNode['accelX'], bufferXNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelY'], bufferYNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelZ'], bufferZNode['dataIn'])
+        self.analyzeXNode.register_callback(self.updateRate)
+        self.analyzeYNode.register_callback(self.updateRate)
+        self.analyzeZNode.register_callback(self.updateRate)
 
-        self.fc.connectTerminals(bufferXNode['dataOut'], analyzeXNode['dataIn'])
-        self.fc.connectTerminals(bufferYNode['dataOut'], analyzeYNode['dataIn'])
-        self.fc.connectTerminals(bufferZNode['dataOut'], analyzeZNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelX'], self.compBufferXNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelY'], self.compBufferYNode['dataIn'])
+        self.fc.connectTerminals(self.wiimoteNode['accelZ'], self.compBufferZNode['dataIn'])
+
+        self.fc.connectTerminals(self.compBufferXNode['dataOut'], analyzeXNode['dataIn'])
+        self.fc.connectTerminals(self.compBufferYNode['dataOut'], analyzeYNode['dataIn'])
+        self.fc.connectTerminals(self.compBufferZNode['dataOut'], analyzeZNode['dataIn'])
 
         self.fc.connectTerminals(
             analyzeXNode['dataOut'], pwXNode['In'])
@@ -246,27 +301,6 @@ class Demo(QtGui.QWidget):
             analyzeYNode['dataOut'], pwYNode['In'])
         self.fc.connectTerminals(
             analyzeZNode['dataOut'], pwZNode['In'])
-
-
-    def getWiimote(self):
-        if len(sys.argv) == 1:
-            addr, name = wiimote.find()[0]
-        elif len(sys.argv) == 2:
-            addr = sys.argv[1]
-            name = None
-        elif len(sys.argv) == 3:
-            addr, name = sys.argv[1:3]
-        print("Connecting to %s (%s)" % (name, addr))
-
-        self.wiimoteNode.text.setText(addr)
-        self.wiimoteNode.connect_wiimote()
-
-    def update(self):
-        outputValues = self.activityNode.outputValues()
-
-        if outputValues['activity'] is not None:
-            self.label.setText(outputValues['activity'])
-        pg.QtGui.QApplication.processEvents()
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:

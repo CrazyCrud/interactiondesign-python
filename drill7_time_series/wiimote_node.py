@@ -17,12 +17,9 @@ class BufferNode(CtrlNode):
     Buffers the last n samples provided on input and provides them as a list of
     length n on output.
     A spinbox widget allows for setting the size of the buffer.
-    Default size is 32 samples.
+    Default size is 60 samples.
     """
     nodeName = "Buffer"
-    uiTemplate = [
-        ('size',  'spin', {'value': 128.0, 'step': 1.0, 'range': [0.0, 1024.0]}),
-    ]
 
     def __init__(self, name):
         terminals = {
@@ -30,16 +27,21 @@ class BufferNode(CtrlNode):
             'dataOut': dict(io='out'),
         }
         self._buffer = np.array([])
+        self._size = 60.0
         CtrlNode.__init__(self, name, terminals=terminals)
 
     def process(self, **kwds):
-        size = int(self.ctrls['size'].value())
+        size = int(self._size)
         self._buffer = np.append(self._buffer, kwds['dataIn'])
         self._buffer = self._buffer[-size:]
         output = self._buffer
         return {'dataOut': output}
 
+    def set_buffersize(self, value):
+        self._size = value
+
 fclib.registerNodeType(BufferNode, [('Data',)])
+
 
 class WiimoteNode(Node):
     """
@@ -82,7 +84,7 @@ class WiimoteNode(Node):
         self.layout.addWidget(self.connect_button)
         self.ui.setLayout(self.layout)
         self.connect_button.clicked.connect(self.connect_wiimote)
-        self.btaddr = "b8:ae:6e:18:5d:ab" # for ease of use
+        self.btaddr = "b8:ae:6e:18:5d:ab"  # for ease of use
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
