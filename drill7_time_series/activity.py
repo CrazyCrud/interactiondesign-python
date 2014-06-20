@@ -18,7 +18,7 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.20)
+        #time.sleep(0.20)
 
     sys.exit(app.exec_())
 
@@ -37,7 +37,7 @@ class AnalyzeNode(Node):
         self.sampling_rate_input.setMinimum(0)
         self.sampling_rate_input.setMaximum(80)
         self.sampling_rate_input.setValue(60)
-        self.sampling_rate_input.valueChanged.connect(self.set_sampling_rate)
+        self.sampling_rate_input.valueChanged.connect(self.update_sampling_rate)
         self.layout.addWidget(self.sampling_rate_input)
         self.ui.setLayout(self.layout)
 
