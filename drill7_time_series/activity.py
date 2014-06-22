@@ -9,7 +9,8 @@ import sys
 import time
 import wiimote
 import wiimote_node
-
+import scipy
+import math
 
 def main():
     app = QtGui.QApplication(sys.argv)
@@ -18,7 +19,6 @@ def main():
 
     while True:
         demo.update()
-        #time.sleep(0.20)
 
     sys.exit(app.exec_())
 
@@ -43,8 +43,8 @@ class AnalyzeNode(Node):
         # add spinner for sampling rate selection
         self.sampling_rate_input = QtGui.QSpinBox()
         self.sampling_rate_input.setMinimum(0)
-        self.sampling_rate_input.setMaximum(80)
-        self.sampling_rate_input.setValue(60)
+        self.sampling_rate_input.setMaximum(20)
+        self.sampling_rate_input.setValue(20)
         self.sampling_rate_input.valueChanged.connect(self.update_sampling_rate)
         self.layout.addWidget(self.sampling_rate_input)
         self.ui.setLayout(self.layout)
@@ -55,17 +55,29 @@ class AnalyzeNode(Node):
 
     def process(self, dataIn):
         sampling_rate = int(self.sampling_rate_input.value())
-        #data_length = len(dataIn)
-        #dataIn = dataIn / float(max(dataIn)) # Scaling
-        frequency_spectrum = np.fft.fft(dataIn, n=sampling_rate) / sampling_rate
-        frequency_spectrum = frequency_spectrum[range(sampling_rate / 2)]
 
-        output = np.abs(frequency_spectrum)
+        dataIn = self.filterData(dataIn)
+
+        frequency_spectrum = scipy.fft(dataIn) / len(dataIn)
+        frequency_spectrum = frequency_spectrum[range(len(dataIn) / 2)]
+
+        frequency_spectrum[0] = 0
+
+        frequency_spectrum = np.abs(frequency_spectrum)
+        output = frequency_spectrum / float(max(frequency_spectrum)) # Scaling
 
         return {'dataOut': output}
 
+    def filterData(self, data):
+        kernel = [0 for i in range(0, len(data))]
+
+        for i in range((len(data) / 2) - 5, (len(data) / 2) + 5):
+            kernel[i] = 0.1
+
+        data = np.convolve(data, kernel, 'same')
+        return data
+
     def update_sampling_rate(self, rate):
-        #print 'update_sampling_rate'
         if self.callback is not None:
             #print 'not None'
             self.callback(self.sampling_rate_input.value())
@@ -99,79 +111,37 @@ class ActivityNode(CtrlNode):
             'activity': dict(io='out'),
         }
 
-        self.ui = QtGui.QWidget()
-        self.layout = QtGui.QGridLayout()
-
-        self.sampling_rate = 60
-
-        # add spinner for sampling rate selection
-        self.sampling_rate_input = QtGui.QSpinBox()
-        self.sampling_rate_input.setMinimum(0)
-        self.sampling_rate_input.setMaximum(80)
-        self.sampling_rate_input.setValue(self.sampling_rate)
-        self.sampling_rate_input.valueChanged.connect(self.update_sampling_rate)
-        self.layout.addWidget(self.sampling_rate_input)
-        self.ui.setLayout(self.layout)
-
-        self.callback = None
-
         self.activities = {
-            'walking': 'You\'re walking', 'lying': 'You\'re lying',
-            'running': 'You\'re running', 'none': 'No activity yet...'}
+            'walking': 'You\'re walking',
+            'running': 'You\'re running', 'none': 'No activity yet...',
+            'standing': 'You\'re standing',
+            'nodata': 'Computing data...'}
 
         CtrlNode.__init__(self, name, terminals=terminals)
 
-    def update_sampling_rate(self, rate):
-        if self.callback is not None:
-            self.callback(self.sampling_rate_input.value())
-
-    def set_sampling_rate(self, rate):
-        #!!self.sampling_rate2 = rate
-        #print  self.sampling_rate2
-        self.sampling_rate_input.setValue(rate)
-
-    def register_callback(self, callback):
-        self.callback = callback
-
     def process(self, accelX, accelY, accelZ):
-        sampling_rate = int(self.sampling_rate)
-
-        # break method if there's no data yet
         if accelX is None or accelY is None or accelZ is None:
             return
 
-        data_x_length = len(accelX)
-        data_y_length = len(accelY)
-        data_z_length = len(accelZ)
+        data_length = len(accelX)
 
-        # do fft fo each axis and normalize the resulting values
-        frequency_spectrum_x = np.fft.fft(accelX, n=sampling_rate) / sampling_rate
-
-        print 'pre normalize'
-        print frequency_spectrum_x
-        frequency_spectrum_x = frequency_spectrum_x[range(sampling_rate / 2)]
-
-        print 'after normalize'
-        print frequency_spectrum_x
-        frequency_spectrum_y = np.fft.fft(accelY, n=sampling_rate) / sampling_rate
-        frequency_spectrum_y = frequency_spectrum_y[range(sampling_rate / 2)]
-        frequency_spectrum_z = np.fft.fft(accelZ, n=sampling_rate) / sampling_rate
-        frequency_spectrum_z = frequency_spectrum_z[range(sampling_rate / 2)]
-
-        frequency_spectrum_x = np.abs(frequency_spectrum_x)
-        frequency_spectrum_y = np.abs(frequency_spectrum_y)
-        frequency_spectrum_z = np.abs(frequency_spectrum_z)
-
-        print 'pre filter'
-        print frequency_spectrum_x
-        frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z = \
+        filteredX, filteredY, filteredZ = \
             self.filterData(
-                frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z)
+                accelX, accelY, accelZ)
+        frequencySum = []
+        for i in range(0, data_length):
+            filteredX[i] = math.pow(filteredX[i], 2)
+            filteredY[i] = math.pow(filteredY[i], 2)
+            filteredZ[i] = math.pow(filteredZ[i], 2)
+            frequencySum.append(math.sqrt(filteredX[i] + filteredY[i] + filteredZ[i]))
 
-        print 'after filter'
-        print frequency_spectrum_x
-        output = self.computeFrequencies(
-            frequency_spectrum_x, frequency_spectrum_y, frequency_spectrum_z)
+        frequency_spectrum = scipy.fft(frequencySum) / data_length
+
+        frequency_spectrum = frequency_spectrum[range(data_length / 2)]
+
+        frequency_spectrum = np.abs(frequency_spectrum)
+
+        output = self.computeFrequencies(frequency_spectrum)
 
         return {'activity': output}
 
@@ -180,40 +150,50 @@ class ActivityNode(CtrlNode):
         kernelY = [0 for i in range(0, len(data_y))]
         kernelZ = [0 for i in range(0, len(data_z))]
 
-        print 'len(data_x)'
-        print len(data_x)
-
-        for i in range((len(data_x) / 2) - 2, (len(data_x) / 2) + 2):
+        for i in range((len(data_x) / 2) - 5, (len(data_x) / 2) + 5):
             kernelX[i] = 0.1
 
-        for i in range((len(data_y) / 2) - 2, (len(data_y) / 2) + 2):
+        for i in range((len(data_y) / 2) - 5, (len(data_y) / 2) + 5):
             kernelY[i] = 0.1
 
-        for i in range((len(data_z) / 2) - 2, (len(data_z) / 2) + 2):
+        for i in range((len(data_z) / 2) - 5, (len(data_z) / 2) + 5):
             kernelZ[i] = 0.1
-
-        print 'kernelX'
-        print kernelX
 
         data_x = np.convolve(data_x, kernelX, 'same')
         data_y = np.convolve(data_y, kernelY, 'same')
         data_z = np.convolve(data_z, kernelZ, 'same')
         return data_x, data_y, data_z
 
-    def computeFrequencies(self, fspec_x, fspec_y, fspec_z):
+    def computeFrequencies(self, fspec):
+        activity = self.activities['none']
 
-        if fspec_x is None or len(fspec_x) < 12:
-            return self.activities['none']
+        if fspec is None or len(fspec) < 150:
+            return self.activities['nodata']
 
-        dominantIndices = sorted(range(len(fspec_x)), key=lambda i:fspec_x[i], reverse=True)
+        dominantIndices = sorted(range(len(fspec)), key=lambda i: fspec[i], reverse=True)
         dominantFrequencies = []
 
-        for i in range(0,10):
+        for i in range(0, 8):
             dominantFrequencies.append(dominantIndices[i])
 
-        print 'dominant'
-        print dominantFrequencies
-        activity = self.activities['none']
+        dominantFrequency = sum(dominantFrequencies) / float(len(dominantFrequencies))
+
+        print 'dominantFrequency'
+        print dominantFrequency
+
+        runningFrequency = 7.0
+        walkingFrequency = 5.0
+        standingFrequency = 4.75
+
+        if dominantFrequency > runningFrequency:
+            activity = self.activities['running']
+
+        if dominantFrequency > walkingFrequency - (walkingFrequency - standingFrequency) \
+            and dominantFrequency < runningFrequency:
+            activity = self.activities['walking']
+
+        if dominantFrequency <= standingFrequency:
+            activity = self.activities['standing']
 
         return activity
 
@@ -240,29 +220,7 @@ class Demo(QtGui.QWidget):
         self.createNodes()
         self.createCompareNode()
 
-        self.sampling_rate = 60.0
-
-        '''
-        self.activityNode.set_update_rate(sampling_rate)
-        self.analyzeXNode.set_update_rate(sampling_rate)
-        self.analyzeYNode.set_update_rate(sampling_rate)
-        self.analyzeZNode.set_update_rate(sampling_rate)
-        '''
-        '''
-        self.analyzeXNode.update_sampling_rate(sampling_rate)
-        self.analyzeYNode.update_sampling_rate(sampling_rate)
-        self.analyzeZNode.update_sampling_rate(sampling_rate)
-        '''
-        '''
-        self.activityNode.set_update_rate(sampling_rate)
-        self.analyzeXNode.set_update_rate(sampling_rate)
-        self.analyzeYNode.set_update_rate(sampling_rate)
-        self.analyzeZNode.set_update_rate(sampling_rate)
-        '''
         self.getWiimote()
-
-        self.updateRate(self.sampling_rate)
-
 
     # connect to wiimote with an address given as argument
     def getWiimote(self):
@@ -277,16 +235,6 @@ class Demo(QtGui.QWidget):
 
         self.wiimoteNode.text.setText(addr)
         self.wiimoteNode.connect_wiimote()
-
-    def updateRate(self, rate):
-        self.wiimoteNode.set_update_rate(rate)
-        self.bufferXNode.set_buffersize(rate)
-        self.bufferYNode.set_buffersize(rate)
-        self.bufferZNode.set_buffersize(rate)
-        self.compBufferXNode.set_buffersize(rate)
-        self.compBufferYNode.set_buffersize(rate)
-        self.compBufferZNode.set_buffersize(rate)
-        self.activityNode.sampling_rate = rate
 
     def update(self):
         outputValues = self.activityNode.outputValues()
@@ -327,7 +275,6 @@ class Demo(QtGui.QWidget):
         pwZNode.setPlot(pwZ)
 
         self.activityNode = self.fc.createNode('ActivityNode', pos=(0, 150))
-        self.activityNode.register_callback(self.updateRate)
 
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
         self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
@@ -353,9 +300,13 @@ class Demo(QtGui.QWidget):
         compPwY = pg.PlotWidget()
         compPwZ = pg.PlotWidget()
 
-        self.layout.addWidget(compPwX, 3, 1)
-        self.layout.addWidget(compPwY, 4, 1)
-        self.layout.addWidget(compPwZ, 5, 1)
+        compPwX.setXRange(0, 25)
+        compPwY.setXRange(0, 25)
+        compPwZ.setXRange(0, 25)
+
+        self.layout.addWidget(compPwX, 4, 1)
+        self.layout.addWidget(compPwY, 5, 1)
+        self.layout.addWidget(compPwZ, 6, 1)
 
         pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
         pwXNode.setPlot(compPwX)
@@ -373,10 +324,6 @@ class Demo(QtGui.QWidget):
         self.analyzeXNode = self.fc.createNode('AnalyzeNode', pos=(0, 300))
         self.analyzeYNode = self.fc.createNode('AnalyzeNode', pos=(100, 300))
         self.analyzeZNode = self.fc.createNode('AnalyzeNode', pos=(200, 300))
-
-        self.analyzeXNode.register_callback(self.updateRate)
-        self.analyzeYNode.register_callback(self.updateRate)
-        self.analyzeZNode.register_callback(self.updateRate)
 
         self.fc.connectTerminals(self.wiimoteNode['accelX'], self.compBufferXNode['dataIn'])
         self.fc.connectTerminals(self.wiimoteNode['accelY'], self.compBufferYNode['dataIn'])

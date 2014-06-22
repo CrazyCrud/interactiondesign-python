@@ -10,7 +10,7 @@ import pyqtgraph as pg
 import numpy as np
 
 import wiimote
-
+import time
 
 class BufferNode(CtrlNode):
     """
@@ -27,14 +27,21 @@ class BufferNode(CtrlNode):
             'dataOut': dict(io='out'),
         }
         self._buffer = np.array([])
-        self._size = 60.0
+        self._size = 300.0
         CtrlNode.__init__(self, name, terminals=terminals)
+        self.counter = 0
 
     def process(self, **kwds):
+        self.counter += 1
+        #print self.counter
+
+        #print time.time()
+
         size = int(self._size)
         self._buffer = np.append(self._buffer, kwds['dataIn'])
         self._buffer = self._buffer[-size:]
         output = self._buffer
+        #print output
         return {'dataOut': output}
 
     def set_buffersize(self, value):
@@ -75,7 +82,7 @@ class WiimoteNode(Node):
         self.layout.addWidget(label2)
         self.update_rate_input = QtGui.QSpinBox()
         self.update_rate_input.setMinimum(0)
-        self.update_rate_input.setMaximum(60)
+        self.update_rate_input.setMaximum(20)
         self.update_rate_input.setValue(20)
         self.update_rate_input.valueChanged.connect(self.set_update_rate)
         self.layout.addWidget(self.update_rate_input)
@@ -88,6 +95,7 @@ class WiimoteNode(Node):
         self.text.setText(self.btaddr)
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_all_sensors)
+        self.counter = 0
 
         Node.__init__(self, name, terminals=terminals)
 
