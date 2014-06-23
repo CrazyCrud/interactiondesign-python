@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
 from pyqtgraph.flowchart import Flowchart
-from pyqtgraph.flowchart.library.common import CtrlNode, Node
+from pyqtgraph.flowchart.library.common import CtrlNode
 import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 import sys
-import time
 import wiimote
-import wiimote_node
+from wiimote_node import *
 import scipy
 import math
+
+'''
+The demo application identifies three different states:
+it detects when the person - who holds the wiimote in one
+of his hands - stands still, when the person walks and when
+the person runs
+'''
+
 
 def main():
     app = QtGui.QApplication(sys.argv)
@@ -21,76 +28,6 @@ def main():
         demo.update()
 
     sys.exit(app.exec_())
-
-
-class AnalyzeNode(Node):
-    '''
-    This node processes incoming data with FFT and outputs
-    the resulting array.
-    '''
-
-    nodeName = "AnalyzeNode"
-
-    def __init__(self, name):
-        terminals = {
-            'dataIn': dict(io='in'),
-            'dataOut': dict(io='out'),
-        }
-
-        self.ui = QtGui.QWidget()
-        self.layout = QtGui.QGridLayout()
-
-        # add spinner for sampling rate selection
-        self.sampling_rate_input = QtGui.QSpinBox()
-        self.sampling_rate_input.setMinimum(0)
-        self.sampling_rate_input.setMaximum(20)
-        self.sampling_rate_input.setValue(20)
-        self.sampling_rate_input.valueChanged.connect(self.update_sampling_rate)
-        self.layout.addWidget(self.sampling_rate_input)
-        self.ui.setLayout(self.layout)
-
-        self.callback = None
-
-        Node.__init__(self, name, terminals=terminals)
-
-    def process(self, dataIn):
-        sampling_rate = int(self.sampling_rate_input.value())
-
-        dataIn = self.filterData(dataIn)
-
-        frequency_spectrum = scipy.fft(dataIn) / len(dataIn)
-        frequency_spectrum = frequency_spectrum[range(len(dataIn) / 2)]
-
-        frequency_spectrum[0] = 0
-
-        frequency_spectrum = np.abs(frequency_spectrum)
-        output = frequency_spectrum / float(max(frequency_spectrum)) # Scaling
-
-        return {'dataOut': output}
-
-    def filterData(self, data):
-        kernel = [0 for i in range(0, len(data))]
-
-        for i in range((len(data) / 2) - 5, (len(data) / 2) + 5):
-            kernel[i] = 0.1
-
-        data = np.convolve(data, kernel, 'same')
-        return data
-
-    def update_sampling_rate(self, rate):
-        if self.callback is not None:
-            #print 'not None'
-            self.callback(self.sampling_rate_input.value())
-
-    def set_sampling_rate(self, rate):
-        #print 'set_sampling_rate'
-        self.sampling_rate_input.setValue(rate)
-
-    def register_callback(self, callback):
-        #print 'register_callback'
-        self.callback = callback
-
-fclib.registerNodeType(AnalyzeNode, [('Data',)])
 
 
 class ActivityNode(CtrlNode):
@@ -133,12 +70,13 @@ class ActivityNode(CtrlNode):
             filteredX[i] = math.pow(filteredX[i], 2)
             filteredY[i] = math.pow(filteredY[i], 2)
             filteredZ[i] = math.pow(filteredZ[i], 2)
-            frequencySum.append(math.sqrt(filteredX[i] + filteredY[i] + filteredZ[i]))
+            frequencySum.append(math.sqrt(filteredX[i] +
+                                filteredY[i] + filteredZ[i]))
 
         frequency_spectrum = scipy.fft(frequencySum) / data_length
 
         frequency_spectrum = frequency_spectrum[range(data_length / 2)]
-
+        frequency_spectrum[0] = 0
         frequency_spectrum = np.abs(frequency_spectrum)
 
         output = self.computeFrequencies(frequency_spectrum)
@@ -170,30 +108,41 @@ class ActivityNode(CtrlNode):
         if fspec is None or len(fspec) < 150:
             return self.activities['nodata']
 
-        dominantIndices = sorted(range(len(fspec)), key=lambda i: fspec[i], reverse=True)
+        # get most dominant frequencies
+        dominantIndices = sorted(
+            range(len(fspec)), key=lambda i: fspec[i], reverse=True)
         dominantFrequencies = []
 
-        for i in range(0, 8):
+        for i in range(0, 12):
             dominantFrequencies.append(dominantIndices[i])
 
-        dominantFrequency = sum(dominantFrequencies) / float(len(dominantFrequencies))
+        # calculate deviation
+        mean = sum(dominantFrequencies) / \
+            float(len(dominantFrequencies))
 
-        print 'dominantFrequency'
-        print dominantFrequency
+        value_sum = 0
+        for value in dominantFrequencies:
+            value_sum += math.pow(value - mean, 2)
 
-        runningFrequency = 7.0
-        walkingFrequency = 5.0
-        standingFrequency = 4.75
+        dev = math.sqrt(value_sum / mean)
 
-        if dominantFrequency > runningFrequency:
+        # check for activities
+        runningFrequency = 8.5
+        walkingFrequency = 6.5
+        standingFrequency = 6.0
+
+        if mean >= runningFrequency:
             activity = self.activities['running']
+            return activity
 
-        if dominantFrequency > walkingFrequency - (walkingFrequency - standingFrequency) \
-            and dominantFrequency < runningFrequency:
-            activity = self.activities['walking']
-
-        if dominantFrequency <= standingFrequency:
+        if mean <= standingFrequency or dev < 5.0:
             activity = self.activities['standing']
+            return activity
+
+        if mean > walkingFrequency - (walkingFrequency - standingFrequency) \
+                and mean < runningFrequency:
+            activity = self.activities['walking']
+            return activity
 
         return activity
 
@@ -218,7 +167,6 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 4, 1)
 
         self.createNodes()
-        self.createCompareNode()
 
         self.getWiimote()
 
@@ -281,9 +229,12 @@ class Demo(QtGui.QWidget):
         self.bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
         self.bufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
 
-        self.fc.connectTerminals(self.wiimoteNode['accelX'], self.bufferXNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelY'], self.bufferYNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelZ'], self.bufferZNode['dataIn'])
+        self.fc.connectTerminals(
+            self.wiimoteNode['accelX'], self.bufferXNode['dataIn'])
+        self.fc.connectTerminals(
+            self.wiimoteNode['accelY'], self.bufferYNode['dataIn'])
+        self.fc.connectTerminals(
+            self.wiimoteNode['accelZ'], self.bufferZNode['dataIn'])
         self.fc.connectTerminals(self.bufferXNode['dataOut'], pwXNode['In'])
         self.fc.connectTerminals(self.bufferYNode['dataOut'], pwYNode['In'])
         self.fc.connectTerminals(self.bufferZNode['dataOut'], pwZNode['In'])
@@ -293,52 +244,6 @@ class Demo(QtGui.QWidget):
             self.bufferYNode['dataOut'], self.activityNode['accelY'])
         self.fc.connectTerminals(
             self.bufferZNode['dataOut'], self.activityNode['accelZ'])
-
-    # create compare nodes and plots which help with analyzing data during development
-    def createCompareNode(self):
-        compPwX = pg.PlotWidget()
-        compPwY = pg.PlotWidget()
-        compPwZ = pg.PlotWidget()
-
-        compPwX.setXRange(0, 25)
-        compPwY.setXRange(0, 25)
-        compPwZ.setXRange(0, 25)
-
-        self.layout.addWidget(compPwX, 4, 1)
-        self.layout.addWidget(compPwY, 5, 1)
-        self.layout.addWidget(compPwZ, 6, 1)
-
-        pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
-        pwXNode.setPlot(compPwX)
-
-        pwYNode = self.fc.createNode('PlotWidget', pos=(0, -150))
-        pwYNode.setPlot(compPwY)
-
-        pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
-        pwZNode.setPlot(compPwZ)
-
-        self.compBufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
-        self.compBufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
-        self.compBufferZNode = self.fc.createNode('Buffer', pos=(150, -300))
-
-        self.analyzeXNode = self.fc.createNode('AnalyzeNode', pos=(0, 300))
-        self.analyzeYNode = self.fc.createNode('AnalyzeNode', pos=(100, 300))
-        self.analyzeZNode = self.fc.createNode('AnalyzeNode', pos=(200, 300))
-
-        self.fc.connectTerminals(self.wiimoteNode['accelX'], self.compBufferXNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelY'], self.compBufferYNode['dataIn'])
-        self.fc.connectTerminals(self.wiimoteNode['accelZ'], self.compBufferZNode['dataIn'])
-
-        self.fc.connectTerminals(self.compBufferXNode['dataOut'], self.analyzeXNode['dataIn'])
-        self.fc.connectTerminals(self.compBufferYNode['dataOut'], self.analyzeYNode['dataIn'])
-        self.fc.connectTerminals(self.compBufferZNode['dataOut'], self.analyzeZNode['dataIn'])
-
-        self.fc.connectTerminals(
-            self.analyzeXNode['dataOut'], pwXNode['In'])
-        self.fc.connectTerminals(
-            self.analyzeYNode['dataOut'], pwYNode['In'])
-        self.fc.connectTerminals(
-            self.analyzeZNode['dataOut'], pwZNode['In'])
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
