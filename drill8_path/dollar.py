@@ -104,10 +104,10 @@ class Template:
       """'name' is a label identifying this gesture, and 'points' is a list of tuple co-ordinates representing the gesture positions. Example: [(1, 10), (3, 8) ...]"""
       self.name = name
       self.points = [Point(point[0], point[1]) for point in points]
-      self.points = _resample(self.points, numPoints);
-      self.points = _rotateToZero(self.points);
-      self.points = _scaleToSquare(self.points, squareSize);
-      self.points = _translateToOrigin(self.points);
+      self.points = _resample(self.points, numPoints)
+      self.points = _rotateToZero(self.points)
+      self.points = _scaleToSquare(self.points, squareSize)
+      self.points = _translateToOrigin(self.points)
 
 
 def _resample(points, n):
