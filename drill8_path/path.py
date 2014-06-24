@@ -43,8 +43,7 @@ class Demo(QtGui.QWidget):
         self.threshold = 50
         self.default_text = 'No template matched...'
 
-        self.is_path_collected = False
-        self.printed_path = False
+        self.pressed_key = None
 
         self.config_nodes()
         self.config_layout()
@@ -95,37 +94,46 @@ class Demo(QtGui.QWidget):
         font = QtGui.QFont("Arial")
         font.setPointSize(32)
         self.label.setFont(font)
-        self.layout.addWidget(self.label, 2, 2)
+        self.layout.addWidget(self.label, 2, 1, 1, 1)
 
     def setup_templates(self):
         dollar.addTemplate('circle', circle_points)
         dollar.addTemplate('square', square_points)
         dollar.addTemplate('triangle', triangle_points)
 
-    # do actions in loop
     def update(self):
         outputValues = self.pointVisNode.outputValues()
         if outputValues['irX'] is not None and outputValues['irY'] is not None:
             if self.wiimoteNode.wiimote is not None:
                 if self.wiimoteNode.wiimote.buttons['A']:
-                    self.compare_template(outputValues)
+                    self.draw_path(irValues)
+                    self.pressed_key = 'A'
                 elif self.wiimoteNode.wiimote.buttons['B']:
-                    self.create_template(outputValues)
+                    self.draw_path(irValues)
+                    self.pressed_key = 'B'
                 elif self.path['x'] is not None and len(self.path['x']) > 0:
                     points = []
                     for i in range(0, len(self.path['x'])):
                         points.append([self.path['x'][i], self.path['y'][i]])
                     self.scatter.setData(pos=np.array(points))
+                    if self.pressed_key is 'A':
+                        self.compare_template()
+                    elif self.pressed_key is 'B':
+                        self.create_template()
                     self.path['x'] = []
                     self.path['y'] = []
+                    self.pressed_key = None
 
         pyqtgraph.QtGui.QApplication.processEvents()
 
-    def create_template(self, irValues):
-        self.draw_path(irValues)
+    def create_template(self):
+        points = []
+        for i in range(0, len(0, len(self.path['x']))):
+            points.append([self.path['x'][i], self.path['y'][i]])
+        name = 'tpl_' + (len(dollar.templates) + 1)
+        dollar.addTemplate(name, circle_points)
 
-    def compare_template(self, irValues):
-        self.draw_path(irValues)
+    def compare_template(self):
         points = []
         for i in range(0, len(0, len(self.path['x']))):
             points.append([self.path['x'][i], self.path['y'][i]])
