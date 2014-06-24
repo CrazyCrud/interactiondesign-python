@@ -41,7 +41,9 @@ class Demo(QtGui.QWidget):
 
         self.path = {'x': [], 'y': []}
         self.threshold = 50
-        self.default_text = 'No template matched...'
+        self.default_msg = 'No template matched...'
+        self.error_ir_msg = 'No ir-values received'
+        self.error_wiimote_msg = 'No wiimote connected'
 
         self.pressed_key = None
 
@@ -90,7 +92,7 @@ class Demo(QtGui.QWidget):
         #plot.setYRange(-1000, 200)
 
         self.label = QtGui.QLabel()
-        self.label.setText(self.default_text)
+        self.label.setText(self.default_msg)
         font = QtGui.QFont("Arial")
         font.setPointSize(32)
         self.label.setFont(font)
@@ -106,24 +108,19 @@ class Demo(QtGui.QWidget):
         if outputValues['irX'] is not None and outputValues['irY'] is not None:
             if self.wiimoteNode.wiimote is not None:
                 if self.wiimoteNode.wiimote.buttons['A']:
-                    self.draw_path(irValues)
+                    self.construct_path(irValues)
                     self.pressed_key = 'A'
                 elif self.wiimoteNode.wiimote.buttons['B']:
-                    self.draw_path(irValues)
+                    self.construct_path(irValues)
                     self.pressed_key = 'B'
                 elif self.path['x'] is not None and len(self.path['x']) > 0:
-                    points = []
-                    for i in range(0, len(self.path['x'])):
-                        points.append([self.path['x'][i], self.path['y'][i]])
-                    self.scatter.setData(pos=np.array(points))
-                    if self.pressed_key is 'A':
-                        self.compare_template()
-                    elif self.pressed_key is 'B':
-                        self.create_template()
-                    self.path['x'] = []
-                    self.path['y'] = []
-                    self.pressed_key = None
-
+                    self.draw_path()
+            else:
+                self.scatter.clear()
+                self.display_message(self.error_wiimote_msg)
+        else:
+            self.scatter.clear()
+            self.display_message(self.error_ir_msg)
         pyqtgraph.QtGui.QApplication.processEvents()
 
     def create_template(self):
@@ -140,14 +137,30 @@ class Demo(QtGui.QWidget):
         name, score = dollar.recognize(points)
         score = score * 100
         if score > self.threshold:
-            self.label.setText(name)
+            self.display_message(name)
         else:
-            self.label.setText(self.default_text)
+            self.display_message(self.default_msg)
 
-    def draw_path(self, irValues):
+    def construct_path(self, irValues):
         self.scatter.clear()
         self.path['x'].append(irValues['irX'])
         self.path['y'].append(irValues['irY'])
+
+    def draw_path(self):
+        points = []
+        for i in range(0, len(self.path['x'])):
+            points.append([self.path['x'][i], self.path['y'][i]])
+        self.scatter.setData(pos=np.array(points))
+        if self.pressed_key is 'A':
+            self.compare_template()
+        elif self.pressed_key is 'B':
+            self.create_template()
+        self.path['x'] = []
+        self.path['y'] = []
+        self.pressed_key = None
+
+    def display_message(self, msg):
+        self.label.setText(msg)
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
