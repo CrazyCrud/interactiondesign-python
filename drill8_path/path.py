@@ -8,6 +8,7 @@ import pyqtgraph as pg
 from PyQt4 import QtGui, QtCore
 import wiimote
 from wiimote_node import *
+import dollar
 
 
 def main():
@@ -18,7 +19,6 @@ def main():
 
     while True:
         demo.update()
-        time.sleep(0.05)
 
     sys.exit(app.exec_())
 
@@ -39,19 +39,21 @@ class Demo(QtGui.QWidget):
         })
         self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
-        self.configNodes()
-        self.configScatterPlot()
+        self.path = {'x': [], 'y': []}
+        self.threshold = 50
+        self.default_text = 'No template matched...'
 
-        self.getWiimote()
+        self.is_path_collected = False
+        self.printed_path = False
 
-        self.pathX = []
-        self.pathY = []
+        self.config_nodes()
+        self.config_layout()
+        self.setup_templates()
 
-        self.isPathCollected = False
-        self.printedPath = False
+        self.get_wiimote()
 
     # connect to wiimote and config wiimote node
-    def getWiimote(self):
+    def get_wiimote(self):
         if len(sys.argv) == 1:
             addr, name = wiimote.find()[0]
         elif len(sys.argv) == 2:
@@ -65,12 +67,10 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.connect_wiimote()
 
     # create and connect nodes
-    def configNodes(self):
+    def config_nodes(self):
         self.pointVisNode = self.fc.createNode('Vis2D', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
-
-        self.buffer_amount = self.bufferNode.getBufferSize()
 
         self.fc.connectTerminals(
             self.wiimoteNode['irVals'],
@@ -80,7 +80,7 @@ class Demo(QtGui.QWidget):
             self.pointVisNode['irVals'])
 
     # create and config scatter plot item
-    def configScatterPlot(self):
+    def config_layout(self):
         gview = pg.GraphicsLayoutWidget()
         self.layout.addWidget(gview, 0, 1, 2, 1)
         plot = gview.addPlot()
@@ -90,42 +90,60 @@ class Demo(QtGui.QWidget):
         #plot.setXRange(-1000, 200)
         #plot.setYRange(-1000, 200)
 
-    def keyPressEvent(self, ev):
-        if ev.key() == QtCore.Qt.Key_Escape:
-            self.close()
+        self.label = QtGui.QLabel()
+        self.label.setText(self.default_text)
+        font = QtGui.QFont("Arial")
+        font.setPointSize(32)
+        self.label.setFont(font)
+        self.layout.addWidget(self.label, 2, 2)
+
+    def setup_templates(self):
+        dollar.addTemplate('circle', circle_points)
+        dollar.addTemplate('square', square_points)
+        dollar.addTemplate('triangle', triangle_points)
 
     # do actions in loop
     def update(self):
         outputValues = self.pointVisNode.outputValues()
-
         if outputValues['irX'] is not None and outputValues['irY'] is not None:
-            irX = outputValues['irX']
-            irY = outputValues['irY']
-
-            # raise or lower buffer amount with +/- keys
             if self.wiimoteNode.wiimote is not None:
-                """
-                if self.wiimoteNode.wiimote.buttons['Plus']:
-                    self.buffer_amount += 1
-                    self.bufferNode.setBufferSize(self.buffer_amount)
-                elif self.wiimoteNode.wiimote.buttons['Minus']:
-                    if self.buffer_amount > 1:
-                        self.buffer_amount -= 1
-                        self.bufferNode.setBufferSize(self.buffer_amount)
-                """
                 if self.wiimoteNode.wiimote.buttons['A']:
-                    self.scatter.clear()
-                    self.pathX.append(irX)
-                    self.pathY.append(irY)
-                elif self.pathX is not None and len(self.pathX) > 0:
-                    mergedValues = []
-                    for i in range(0, len(self.pathX)):
-                        mergedValues.append([self.pathX[i], self.pathY[i]])
-                    self.scatter.setData(pos=np.array(mergedValues))
-                    self.pathX = []
-                    self.pathY = []
+                    self.compare_template(outputValues)
+                elif self.wiimoteNode.wiimote.buttons['B']:
+                    self.create_template(outputValues)
+                elif self.path['x'] is not None and len(self.path['x']) > 0:
+                    points = []
+                    for i in range(0, len(self.path['x'])):
+                        points.append([self.path['x'][i], self.path['y'][i]])
+                    self.scatter.setData(pos=np.array(points))
+                    self.path['x'] = []
+                    self.path['y'] = []
 
         pyqtgraph.QtGui.QApplication.processEvents()
+
+    def create_template(self, irValues):
+        self.draw_path(irValues)
+
+    def compare_template(self, irValues):
+        self.draw_path(irValues)
+        points = []
+        for i in range(0, len(0, len(self.path['x']))):
+            points.append([self.path['x'][i], self.path['y'][i]])
+        name, score = dollar.recognize(points)
+        score = score * 100
+        if score > self.threshold:
+            self.label.setText(name)
+        else:
+            self.label.setText(self.default_text)
+
+    def draw_path(self, irValues):
+        self.scatter.clear()
+        self.path['x'].append(irValues['irX'])
+        self.path['y'].append(irValues['irY'])
+
+    def keyPressEvent(self, ev):
+        if ev.key() == QtCore.Qt.Key_Escape:
+            self.close()
 
 if __name__ == "__main__":
     main()
