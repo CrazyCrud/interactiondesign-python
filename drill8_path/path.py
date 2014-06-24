@@ -97,6 +97,7 @@ class Demo(QtGui.QWidget):
         plot = gview.addPlot()
         self.scatter = pg.ScatterPlotItem(
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
+        self.scatter.enableAutoRange()
         plot.addItem(self.scatter)
         #plot.setXRange(-1000, 200)
         #plot.setYRange(-1000, 200)
