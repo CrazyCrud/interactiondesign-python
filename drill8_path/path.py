@@ -72,6 +72,7 @@ class Demo(QtGui.QWidget):
         self.pointVisNode = self.fc.createNode('Vis2D', pos=(-150, 150))
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
+        self.bufferNode.setBufferSize(128)
 
         self.fc.connectTerminals(
             self.wiimoteNode['irVals'],
