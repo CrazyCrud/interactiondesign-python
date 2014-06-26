@@ -55,7 +55,7 @@ class Recognizer:
       """Determine which gesture template most closely matches the gesture represented by the input points. 'points' is a list of tuples, eg: [(1, 10), (3, 8) ...]. Returns a tuple of the form (name, score) where name is the matching template, and score is a float [0..1] representing the match certainty."""
 
       points = [Point(point[0], point[1]) for point in points]
-      points = _resample(points, numPoints);
+      points = resample(points, numPoints);
       points = _rotateToZero(points);
       points = _scaleToSquare(points, squareSize);
       points = _translateToOrigin(points);
@@ -104,13 +104,13 @@ class Template:
       """'name' is a label identifying this gesture, and 'points' is a list of tuple co-ordinates representing the gesture positions. Example: [(1, 10), (3, 8) ...]"""
       self.name = name
       self.points = [Point(point[0], point[1]) for point in points]
-      self.points = _resample(self.points, numPoints)
+      self.points = resample(self.points, numPoints)
       self.points = _rotateToZero(self.points)
       self.points = _scaleToSquare(self.points, squareSize)
       self.points = _translateToOrigin(self.points)
 
 
-def _resample(points, n):
+def resample(points, n):
    """Resample a set of points to a roughly equivalent, evenly-spaced set of points."""
    I = _pathLength(points) / (n - 1) # interval length
    D = 0.0
