@@ -56,7 +56,10 @@ class Recognizer:
 
       points = [Point(point[0], point[1]) for point in points]
       points = resample(points, numPoints);
+      if points is None or len(points) < 4:
+         return ('', 0)
       points = _rotateToZero(points);
+      print len(points)
       points = _scaleToSquare(points, squareSize);
       points = _translateToOrigin(points);
 
@@ -105,6 +108,8 @@ class Template:
       self.name = name
       self.points = [Point(point[0], point[1]) for point in points]
       self.points = resample(self.points, numPoints)
+      if self.points is None or len(self.points) < 4:
+         self.points = [Point(0, 0)]
       self.points = _rotateToZero(self.points)
       self.points = _scaleToSquare(self.points, squareSize)
       self.points = _translateToOrigin(self.points)
@@ -117,17 +122,22 @@ def resample(points, n):
    newpoints = [points[0]]
    i = 1
    while i < len(points) - 1:
-      d = _distance(points[i - 1], points[i])
-      if (D + d) >= I:
-         qx = points[i - 1].x + ((I - D) / d) * (points[i].x - points[i - 1].x)
-         qy = points[i - 1].y + ((I - D) / d) * (points[i].y - points[i - 1].y)
-         q = Point(qx, qy)
-         newpoints.append(q)
-         # Insert 'q' at position i in points s.t. 'q' will be the next i
-         points.insert(i, q)
-         D = 0.0
-      else:
-         D += d
+      try:
+         d = _distance(points[i - 1], points[i])
+      except Exception:
+         return None
+
+      if d > 0:
+         if (D + d) >= I:
+            qx = points[i - 1].x + ((I - D) / d) * (points[i].x - points[i - 1].x)
+            qy = points[i - 1].y + ((I - D) / d) * (points[i].y - points[i - 1].y)
+            q = Point(qx, qy)
+            newpoints.append(q)
+            # Insert 'q' at position i in points s.t. 'q' will be the next i
+            points.insert(i, q)
+            D = 0.0
+         else:
+            D += d
       i += 1
 
    # Sometimes we fall a rounding-error short of adding the last point, so add it if so.

@@ -39,7 +39,7 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
         self.path = {'x': [], 'y': []}
-        self.threshold = 20
+        self.threshold = 50
         self.sample_size = 64
         self.default_msg = 'No template matched...'
         self.error_ir_msg = 'No ir-values received'
@@ -99,12 +99,20 @@ class Demo(QtGui.QWidget):
     def config_layout(self):
         gview = pg.GraphicsLayoutWidget()
         self.layout.addWidget(gview, 0, 1, 2, 1)
-        plot = gview.addPlot()
-        self.scatter = pg.ScatterPlotItem(
+        self.templatePlot = gview.addPlot()
+        self.templateScatter = pg.ScatterPlotItem(
+            size=10, pen=pg.mkPen(None), brush=pg.mkBrush(0, 255, 0, 120))
+        self.templatePlot.addItem(self.templateScatter)
+        self.templatePlot.setTitle("Template")
+        self.setRange(self.templatePlot)
+
+        #self.layout.addWidget(gview, 0, 1, 2, 1)
+        self.pathPlot = gview.addPlot()
+        self.pathScatter = pg.ScatterPlotItem(
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
-        plot.addItem(self.scatter)
-        plot.setXRange(-400, 1400)
-        plot.setYRange(-400, 1400)
+        self.pathPlot.addItem(self.pathScatter)
+        self.pathPlot.setTitle("Path")
+        self.setRange(self.pathPlot)
 
         self.label = QtGui.QLabel()
         self.label.setText(self.default_msg)
@@ -122,11 +130,11 @@ class Demo(QtGui.QWidget):
         trianglePoints = [(282, 83), (281, 85), (277, 91), (273, 97), (267, 105), (261, 113), (253, 123), (243, 133), (235, 141), (229, 149), (221, 153), (217, 159), (216, 160), (215, 161), (214, 162), (216, 162), (218, 162), (221, 162), (227, 164), (233, 166), (241, 166), (249, 166), (259, 166), (271, 166), (283, 166), (297, 166), (309, 164), (323, 164), (335, 162), (345, 162), (353, 162), (361, 160), (363, 159), (365, 159), (366, 158), (367, 158), (368, 157), (369, 157), (370, 156), (371, 156), (371, 155), (372, 155), (372, 153), (372, 152), (372, 151), (372, 149), (372, 147), (371, 145), (367, 141), (363, 137), (359, 133), (353, 129), (349, 125), (343, 121), (337, 119), (333, 115), (327, 111), (325, 110), (324, 109), (320, 105), (318, 104), (314, 100), (312, 99), (310, 98), (306, 94), (305, 93), (303, 92), (301, 91), (300, 90), (298, 89), (297, 88), (296, 88), (295, 87), (294, 87), (293, 87), (293, 87)]
 
         '''
-        self.scatter.addPoints(
+        self.templateScatter.addPoints(
             pos=np.array(circlePoints), brush=pg.mkBrush(0, 255, 0, 120))
-        self.scatter.addPoints(
+        self.templateScatter.addPoints(
             pos=np.array(squarePoints), brush=pg.mkBrush(0, 255, 0, 120))
-        self.scatter.addPoints(
+        self.templateScatter.addPoints(
             pos=np.array(trianglePoints), brush=pg.mkBrush(0, 255, 0, 120))
         '''
 
@@ -150,11 +158,18 @@ class Demo(QtGui.QWidget):
                 elif self.path['x'] is not None and len(self.path['x']) > 0:
                     self.draw_path()
             else:
-                self.scatter.clear()
+                self.templateScatter.clear()
+                self.pathScatter.clear()
                 self.display_message(self.error_wiimote_msg)
         else:
-            self.scatter.clear()
+            self.templateScatter.clear()
+            self.pathScatter.clear()
             self.display_message(self.error_ir_msg)
+
+        # update range to remove old graphics
+        self.setRange(self.templatePlot)
+        self.setRange(self.pathPlot)
+
         pyqtgraph.QtGui.QApplication.processEvents()
 
     '''
@@ -185,6 +200,7 @@ class Demo(QtGui.QWidget):
         # and its amount of matching
         if len(points) < 3:
             self.display_message(self.default_msg)
+            self.templateScatter.clear()
             return
 
         name, score = self.dollar.recognize(points)
@@ -203,17 +219,19 @@ class Demo(QtGui.QWidget):
             for i in range(0, len(template.points)):
                 tpl_points.append([template.points[i].x, template.points[i].y])
             # display points
-            self.scatter.addPoints(
+            self.templateScatter.addPoints(
                 pos=np.array(tpl_points), brush=pg.mkBrush(0, 255, 0, 120))
         else:
             # template doesn't match good enough
             self.display_message(self.default_msg)
+            self.templateScatter.clear()
 
     '''
     The infrafred values are stored in a dictionary
     '''
     def construct_path(self, irValues):
-        self.scatter.clear()
+        self.templateScatter.clear()
+        self.pathScatter.clear()
         self.path['x'].append(irValues['irX'])
         self.path['y'].append(irValues['irY'])
 
@@ -227,19 +245,21 @@ class Demo(QtGui.QWidget):
             points.append(dollar.Point(path[i][0], path[i][1]))
 
         # display points
-        points = dollar.resample(points, self.sample_size)
-        path = []
-        for i in range(0, len(points)):
-            path.append([points[i].x, points[i].y])
+        if len(points) >= 3:
+            points = dollar.resample(points, self.sample_size)
+            if points is not None:
+                path = []
+                for i in range(0, len(points)):
+                    path.append([points[i].x, points[i].y])
 
-        self.scatter.addPoints(
-            pos=np.array(path), brush=pg.mkBrush(255, 255, 255, 120))
+                self.pathScatter.addPoints(
+                    pos=np.array(path), brush=pg.mkBrush(255, 255, 255, 120))
 
-        # handle pressed keys
-        if self.pressed_key is 'A':
-            self.compare_template()
-        elif self.pressed_key is 'B':
-            self.create_template()
+                # handle pressed keys
+                if self.pressed_key is 'A':
+                    self.compare_template()
+                elif self.pressed_key is 'B':
+                    self.create_template()
 
         self.path['x'] = []
         self.path['y'] = []
@@ -263,6 +283,10 @@ class Demo(QtGui.QWidget):
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
+
+    def setRange(self, plot):
+        plot.enableAutoRange(enable=False)
+        plot.enableAutoRange(enable=True)
 
 if __name__ == "__main__":
     main()
