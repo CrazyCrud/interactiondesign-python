@@ -1,0 +1,2 @@
+http://nullege.com/codes/search/pyqtgraph.ImageItem
+http://www.pyqtgraph.org/documentation/graphicsItems/imageitem.html
