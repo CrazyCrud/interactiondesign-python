@@ -21,6 +21,7 @@ class WiiGestureRecognizer:
         tpl_distances = sorted(tpl_distances.items(), key=lambda x: x[1])
         return self._get_template(tpl_distances[0][0])
 
+    # points = [(1,1), (2,3), (4,4)]
     def add_template(self, name, points):
         points = self._compute_points(points)
         if len(points) > 0:
@@ -29,6 +30,7 @@ class WiiGestureRecognizer:
         else:
             return False
 
+    # points = [(1,1), (2,3), (4,4)]
     def _compute_points(self, points):
         points = self._resample(points)
         if len(points) > 0:
