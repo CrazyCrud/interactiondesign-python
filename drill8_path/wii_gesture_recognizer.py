@@ -1,13 +1,14 @@
 # cod_totaling: utf-8
 import math
+import operator
 
 
 class WiiGestureRecognizer:
-    templates = []
+    templates = {}
 
     def compare_to_templates(self, points):
         points = self._compute_points(points)
-        distances = []
+        tpl_distances = {}
         for template in self.templates:
             d = 0
             for i in range(0, len(template)):
@@ -17,7 +18,10 @@ class WiiGestureRecognizer:
                 y_tpl = template[i][1]
                 d += math.sqrt(
                     math.pow(x - x_tpl, 2) + math.pow(y - y_tpl, 2))
-            distances
+            tpl_distances[template.name] = d
+        tpl_distances = sorted(
+            tpl_distances.iteritems(), key=operator.itemgetter(1))
+        return tpl_distances[0]
 
     def _compute_points(self, points):
         points = self._resample(points)
@@ -131,3 +135,8 @@ class WiiGestureRecognizer:
             scaled_points.append((x, y))
 
         return scaled_points
+
+    class Template:
+        def __init__(self, name, points):
+            self.name = name
+            self.points = points
