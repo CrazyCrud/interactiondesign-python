@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# cod_totaling: utf-8
 
 import sys
 from pyqtgraph.flowchart import Flowchart
