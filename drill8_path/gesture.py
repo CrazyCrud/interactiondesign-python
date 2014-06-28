@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 # cod_totaling: utf-8
 
+# Recognize predefined and custom gestures with the WiiMote using $1 Recognizer.
+# The MAC address of the WiiMote is needed as a command line argument.
+
+# The IR data of the WiiMote is used as input for gesture recognition.
+# This is done using the wiimote.py and wiimote_node.py.
+
+# This tool displays recognized templates in the left plot and
+# the raw IR data in the right plot.
+
 import sys
 from pyqtgraph.flowchart import Flowchart
 import pyqtgraph
@@ -11,6 +20,7 @@ from wiimote_node import *
 import math
 
 
+#init program and do looping work
 def main():
     app = QtGui.QApplication(sys.argv)
 
@@ -23,7 +33,7 @@ def main():
     sys.exit(app.exec_())
 
 
-# Recognize predefined and custom gestures with the WiiMote using $1 Recognizer
+# main class controlling the processes
 class Demo(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Demo, self).__init__()
