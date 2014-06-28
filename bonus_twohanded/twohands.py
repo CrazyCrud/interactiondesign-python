@@ -32,7 +32,7 @@ def main():
     # lock the aspect ratio
     #view.setAspectLocked(True)
 
-    imgFile = scipy.misc.imread("/home/michl/Desktop/sf_SharedLinuxFolder/Git/interactiondesign-python/bonus_twohanded/sugar.jpg")
+    imgFile = scipy.misc.imread("sugar.jpg")
 
     ## Create image item
     img = pg.ImageItem(imgFile, border='w')
