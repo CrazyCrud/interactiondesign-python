@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # cod_totaling: utf-8
 
-# Recognize predefined and custom gestures with the WiiMote using $1 Recognizer.
+# Recognize predefined and custom gestures with the WiiMote
+# using $1 Recognizer.
 # The MAC address of the WiiMote is needed as a command line argument.
 
 # The IR data of the WiiMote is used as input for gesture recognition.
@@ -20,7 +21,7 @@ from wiimote_node import *
 import math
 
 
-#init program and do looping work
+# init program and do looping work
 def main():
     app = QtGui.QApplication(sys.argv)
 
@@ -95,7 +96,7 @@ class Demo(QtGui.QWidget):
         self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
         self.pointVisNode = self.fc.createNode('Vis2D', pos=(-150, 150))
 
-        self.bufferNode.setBufferSize(128)
+        self.bufferNode.setBufferSize(4)
 
         self.fc.connectTerminals(
             self.wiimoteNode['irVals'],
@@ -116,7 +117,7 @@ class Demo(QtGui.QWidget):
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(0, 255, 0, 120))
         self.templatePlot.addItem(self.templateScatter)
         self.templatePlot.setTitle("Template")
-        self.setRange(self.templatePlot)
+        self.setRange(self.templatePlot, False)
 
         # self.layout.addWidget(gview, 0, 1, 2, 1)
         self.pathPlot = gview.addPlot()
@@ -124,7 +125,7 @@ class Demo(QtGui.QWidget):
             size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
         self.pathPlot.addItem(self.pathScatter)
         self.pathPlot.setTitle("Path")
-        self.setRange(self.pathPlot)
+        self.setRange(self.pathPlot, False)
 
         self.label = QtGui.QLabel()
         self.label.setText(self.default_msg)
@@ -238,8 +239,8 @@ class Demo(QtGui.QWidget):
             self.display_message(self.error_ir_msg)
 
         # update range to remove old graphics
-        self.setRange(self.templatePlot)
-        self.setRange(self.pathPlot)
+        self.setRange(self.templatePlot, False)
+        self.setRange(self.pathPlot, False)
 
         pyqtgraph.QtGui.QApplication.processEvents()
 
@@ -256,6 +257,7 @@ class Demo(QtGui.QWidget):
         if len(points) > 3:
             # name and add template
             name = 'tpl_' + str((len(self.dollar.templates) + 1))
+            self.label.setText("Created template " + name)
             self.dollar.addTemplate(name, points)
         else:
             self.display_message(self.error_template_msg)
@@ -286,12 +288,18 @@ class Demo(QtGui.QWidget):
 
             tpl_points = []
 
-            # collect and display template points
-            for i in range(0, len(template.points)):
-                tpl_points.append([template.points[i].x, template.points[i].y])
-            # display points
-            self.templateScatter.addPoints(
-                pos=np.array(tpl_points), brush=pg.mkBrush(0, 255, 0, 120))
+            if template.points is None:
+                # template doesn't match good enough
+                self.display_message(self.default_msg)
+                self.templateScatter.clear()
+            else:
+                # collect and display template points
+                for i in range(0, len(template.points)):
+                    tpl_points.append(
+                        [template.points[i].x, template.points[i].y])
+                # display points
+                self.templateScatter.addPoints(
+                    pos=np.array(tpl_points), brush=pg.mkBrush(0, 255, 0, 120))
         else:
             # template doesn't match good enough
             self.display_message(self.default_msg)
@@ -355,9 +363,13 @@ class Demo(QtGui.QWidget):
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
 
-    def setRange(self, plot):
-        plot.enableAutoRange(enable=False)
-        plot.enableAutoRange(enable=True)
+    def setRange(self, plot, static):
+        if static is False:
+            plot.enableAutoRange(enable=False)
+            plot.enableAutoRange(enable=True)
+        else:
+            plot.setXRange(300, 750)
+            plot.setYRange(300, 750)
 
 
 # start of $1 gesture recognizer implementation
@@ -515,7 +527,7 @@ def _rotateBy(points, theta):
 def _scaleToSquare(points, size):
     """Scale a scale of points to fit a given bounding box."""
     B = _boundingBox(points)
-    if B is None:
+    if B is None or B.width <= 0 or B.height <= 0:
         return None
 
     newpoints = []
@@ -606,8 +618,10 @@ def _boundingBox(points):
 def _pathDistance(pts1, pts2):
     """'Distance' between two paths."""
     d = 0.0
-    for index in range(len(pts1)):  # assumes pts1.length == pts2.length
-        d += _distance(pts1[index], pts2[index])
+    if pts1 is not None and pts2 is not None:
+        for index in range(len(pts1)):  # assumes pts1.length == pts2.length
+            if index < len(pts2):
+                d += _distance(pts1[index], pts2[index])
     return d / len(pts1)
 
 
