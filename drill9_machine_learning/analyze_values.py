@@ -21,7 +21,7 @@ of his hands - stands still, when the person walks and when
 the person runs
 '''
 
-class ActivityNode(CtrlNode):
+class ClassifierNode(CtrlNode):
     '''
     This node reads accelerometer data of a wiimote and tries
     to identify the activities walking, lying or running by
@@ -29,7 +29,7 @@ class ActivityNode(CtrlNode):
     the activities can be recognized.
     '''
 
-    nodeName = "ActivityNode"
+    nodeName = "ClassifierNode"
 
     def __init__(self, name):
         terminals = {
@@ -45,21 +45,92 @@ class ActivityNode(CtrlNode):
             'standing': 'You\'re standing',
             'nodata': 'Computing data...'}
 
+        self.classes = {
+            'walk': [0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
+            'stand': [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            'hop': [0, 0, 0, 0, 1, 1, 1, 1, 0, 0]
+        }
+
+        self.sample_data = {}
+
+        self.sample_data['walk'] = self._read_data('walk')
+        self.sample_data['stand'] = self._read_data('stand')
+        self.sample_data['hop'] = self._read_data('hop')
+
+        self._transform_data()
+        self._concat_data()
+        self._train_data()
+
         CtrlNode.__init__(self, name, terminals=terminals)
 
     def process(self, accelX, accelY, accelZ):
         if accelX is None or accelY is None or accelZ is None:
             return
 
-        output = self.compute_input(accelX, accelY, accelZ)
+        output = self._compute_input(accelX, accelY, accelZ)
 
         return {'activity': output}
 
-    def compute_input(self, accelX, accelY, accelZ):
+    def _read_data(self, which):
+        x = y = z = []
+        i = 0
+        while True:
+            i += 1
+            try:
+                sample_file = open(which + "_" + i + ".csv", 'r')
+                for line in sample_file:
+                    values = line.split(sep=',')
+                    x.append(values[0])
+                    y.append(values[1])
+                    z.append(values[2])
+                sample_file.close()
+            except IOError:
+                break
+        return (x, y, z)
+
+    def _transform_data(self):
+        for action in self.sample_data:
+            x_data = self.sample_data[action][0]
+            data_length = len(x_data)
+            x_frequencies = scipy.fft(x_data) / data_length
+            x_frequencies = x_frequencies[range(data_length / 2)]
+            x_frequencies[0] = 0
+            x_frequencies = np.abs(x_frequencies)
+
+            y_data = self.sample_data[action][1]
+            data_length = len(y_data)
+            y_frequencies = scipy.fft(y_data) / data_length
+            y_frequencies = y_frequencies[range(data_length / 2)]
+            y_frequencies[0] = 0
+            y_frequencies = np.abs(y_frequencies)
+
+            z_data = self.sample_data[action][2]
+            data_length = len(z_data)
+            z_frequencies = scipy.fft(z_data) / data_length
+            z_frequencies = z_frequencies[range(data_length / 2)]
+            z_frequencies[0] = 0
+            z_frequencies = np.abs(z_frequencies)
+
+            self.sample_data[action] = (
+                x_frequencies, y_frequencies, z_frequencies)
+
+    def _concat_data(self):
+        for action in self.sample_data:
+            self.sample_data[action] = \
+                zip(
+                    self.sample_data[action][0] +
+                    self.sample_data[action][1] +
+                    self.sample_data[action][2])
+
+    def _train_data(self):
+        for action in self.sample_data:
+            classifier.fit(self.sample_data[action], self.classes[action])
+
+    def _compute_input(self, accelX, accelY, accelZ):
         return self.activities['nodata']
 
 
-fclib.registerNodeType(ActivityNode, [('Data',)])
+fclib.registerNodeType(ClassifierNode, [('Data',)])
 
 
 def main():
@@ -145,7 +216,7 @@ class Demo(QtGui.QWidget):
         pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
         pwZNode.setPlot(pwZ)
 
-        self.activityNode = self.fc.createNode('ActivityNode', pos=(0, 150))
+        self.activityNode = self.fc.createNode('ClassifierNode', pos=(0, 150))
 
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
         self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
