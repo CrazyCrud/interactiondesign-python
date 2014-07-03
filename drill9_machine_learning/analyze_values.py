@@ -115,8 +115,8 @@ class ClassifierNode(CtrlNode):
             z_frequencies = np.abs(z_frequencies)
             z_frequencies = z_frequencies[:50]
 
-            self.sample_data[action] = zip(
-                x_frequencies, y_frequencies, z_frequencies)
+            self.sample_data[action] = x_frequencies + y_frequencies \
+                + z_frequencies
 
     def _train_data(self):
         sample = [
