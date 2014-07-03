@@ -6,12 +6,14 @@ from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 import sys
-import wiimote
-from wiimote_node import *
+#import wiimote
+#from wiimote_node import *
 import scipy
 import math
 import os
 import csv
+from sklearn import svm
+from sklearn import datasets
 from sklearn.preprocessing import scale, StandardScaler, MinMaxScaler
 
 '''
@@ -39,17 +41,16 @@ class ClassifierNode(CtrlNode):
             'activity': dict(io='out'),
         }
 
+
         self.activities = {
             'walking': 'You\'re walking',
             'running': 'You\'re running', 'none': 'No activity yet...',
             'standing': 'You\'re standing',
             'nodata': 'Computing data...'}
 
-        self.classes = {
-            'walk': [0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
-            'stand': [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-            'hop': [0, 0, 0, 0, 1, 1, 1, 1, 0, 0]
-        }
+        self.classes = ['stand', 'walk', 'hop']
+
+        self.classifier = svm.SVC()
 
         self.sample_data = {}
 
@@ -58,7 +59,6 @@ class ClassifierNode(CtrlNode):
         self.sample_data['hop'] = self._read_data('hop')
 
         self._transform_data()
-        self._concat_data()
         self._train_data()
 
         CtrlNode.__init__(self, name, terminals=terminals)
@@ -77,12 +77,13 @@ class ClassifierNode(CtrlNode):
         while True:
             i += 1
             try:
-                sample_file = open(which + "_" + i + ".csv", 'r')
+                sample_file = open(which + "_" + str(i) + ".csv", 'r')
                 for line in sample_file:
-                    values = line.split(sep=',')
-                    x.append(values[0])
-                    y.append(values[1])
-                    z.append(values[2])
+                    values = line.strip().split(',')
+                    if len(values) is 3:
+                        x.append(int(values[0]))
+                        y.append(int(values[1]))
+                        z.append(int(values[2]))
                 sample_file.close()
             except IOError:
                 break
@@ -96,6 +97,7 @@ class ClassifierNode(CtrlNode):
             x_frequencies = x_frequencies[range(data_length / 2)]
             x_frequencies[0] = 0
             x_frequencies = np.abs(x_frequencies)
+            x_frequencies = x_frequencies[:50]
 
             y_data = self.sample_data[action][1]
             data_length = len(y_data)
@@ -103,6 +105,7 @@ class ClassifierNode(CtrlNode):
             y_frequencies = y_frequencies[range(data_length / 2)]
             y_frequencies[0] = 0
             y_frequencies = np.abs(y_frequencies)
+            y_frequencies = y_frequencies[:50]
 
             z_data = self.sample_data[action][2]
             data_length = len(z_data)
@@ -110,21 +113,17 @@ class ClassifierNode(CtrlNode):
             z_frequencies = z_frequencies[range(data_length / 2)]
             z_frequencies[0] = 0
             z_frequencies = np.abs(z_frequencies)
+            z_frequencies = z_frequencies[:50]
 
-            self.sample_data[action] = (
+            self.sample_data[action] = zip(
                 x_frequencies, y_frequencies, z_frequencies)
 
-    def _concat_data(self):
-        for action in self.sample_data:
-            self.sample_data[action] = \
-                zip(
-                    self.sample_data[action][0] +
-                    self.sample_data[action][1] +
-                    self.sample_data[action][2])
-
     def _train_data(self):
-        for action in self.sample_data:
-            classifier.fit(self.sample_data[action], self.classes[action])
+        sample = [
+            self.sample_data['stand'], self.sample_data['walk'],
+            self.sample_data['hop']]
+        print sample
+        self.classifier.fit(sample, self.classes)
 
     def _compute_input(self, accelX, accelY, accelZ):
         return self.activities['nodata']
@@ -162,7 +161,7 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 4, 1)
 
         self.createNodes()
-        self.getWiimote()
+        #self.getWiimote()
 
     # connect to wiimote with an address given as argument
     def getWiimote(self):
@@ -218,6 +217,7 @@ class Demo(QtGui.QWidget):
 
         self.activityNode = self.fc.createNode('ClassifierNode', pos=(0, 150))
 
+        """
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
         self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
         self.bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
@@ -238,6 +238,7 @@ class Demo(QtGui.QWidget):
             self.bufferYNode['dataOut'], self.activityNode['accelY'])
         self.fc.connectTerminals(
             self.bufferZNode['dataOut'], self.activityNode['accelZ'])
+        """
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
