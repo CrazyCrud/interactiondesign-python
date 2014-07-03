@@ -43,9 +43,9 @@ class ClassifierNode(CtrlNode):
 
 
         self.activities = {
-            'walking': 'You\'re walking',
-            'running': 'You\'re running', 'none': 'No activity yet...',
-            'standing': 'You\'re standing',
+            'walk': 'You\'re walking',
+            'hop': 'You\'re running', 'none': 'No activity yet...',
+            'stand': 'You\'re standing',
             'nodata': 'Computing data...'}
 
         self.classes = ['stand', 'walk', 'hop']
@@ -54,11 +54,19 @@ class ClassifierNode(CtrlNode):
 
         self.sample_data = {}
 
+        self.sample_rate = 30
+
         self.sample_data['walk'] = self._read_data('walk')
         self.sample_data['stand'] = self._read_data('stand')
         self.sample_data['hop'] = self._read_data('hop')
 
-        self._transform_data()
+        self.sample_data['walk'] = self._transform_data(
+            self.sample_data['walk'])
+        self.sample_data['stand'] = self._transform_data(
+            self.sample_data['stand'])
+        self.sample_data['hop'] = self._transform_data(
+            self.sample_data['hop'])
+
         self._train_data()
 
         CtrlNode.__init__(self, name, terminals=terminals)
@@ -89,44 +97,42 @@ class ClassifierNode(CtrlNode):
                 break
         return (x, y, z)
 
-    def _transform_data(self):
-        for action in self.sample_data:
-            x_data = self.sample_data[action][0]
-            data_length = len(x_data)
-            x_frequencies = scipy.fft(x_data) / data_length
-            x_frequencies = x_frequencies[range(data_length / 2)]
-            x_frequencies[0] = 0
-            x_frequencies = np.abs(x_frequencies)
-            x_frequencies = x_frequencies[:50]
+    def _transform_data(self, sample):
+        x_data = sample[0]
+        x_frequencies = self._fft(x_data)[:self.sample_rate]
 
-            y_data = self.sample_data[action][1]
-            data_length = len(y_data)
-            y_frequencies = scipy.fft(y_data) / data_length
-            y_frequencies = y_frequencies[range(data_length / 2)]
-            y_frequencies[0] = 0
-            y_frequencies = np.abs(y_frequencies)
-            y_frequencies = y_frequencies[:50]
+        y_data = sample[1]
+        y_frequencies = self._fft(y_data)[:self.sample_rate]
 
-            z_data = self.sample_data[action][2]
-            data_length = len(z_data)
-            z_frequencies = scipy.fft(z_data) / data_length
-            z_frequencies = z_frequencies[range(data_length / 2)]
-            z_frequencies[0] = 0
-            z_frequencies = np.abs(z_frequencies)
-            z_frequencies = z_frequencies[:50]
+        z_data = sample[2]
+        z_frequencies = self._fft(z_data)[:self.sample_rate]
 
-            self.sample_data[action] = x_frequencies + y_frequencies \
-                + z_frequencies
+        return x_frequencies + y_frequencies \
+            + z_frequencies
 
     def _train_data(self):
         sample = [
             self.sample_data['stand'], self.sample_data['walk'],
             self.sample_data['hop']]
-        print sample
         self.classifier.fit(sample, self.classes)
 
     def _compute_input(self, accelX, accelY, accelZ):
-        return self.activities['nodata']
+        if (len(accelX) < self.sample_rate * 2 or
+                len(accelY) < self.sample_rate * 2 or
+                len(accelZ) < self.sample_rate * 2):
+            return self.activities['nodata']
+        else:
+            live_data = self._transform_data((accelX, accelY, accelZ))
+            action = self.classifier.predict(live_data, self.classes)
+            return self.activities[str(action)]
+
+    def _fft(self, data):
+        data_length = len(data)
+        frequencies = scipy.fft(data) / data_length
+        frequencies = frequencies[range(data_length / 2)]
+        frequencies[0] = 0
+        frequencies = np.abs(frequencies)
+        return frequencies
 
 
 fclib.registerNodeType(ClassifierNode, [('Data',)])
