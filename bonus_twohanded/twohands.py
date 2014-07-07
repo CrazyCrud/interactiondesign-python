@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# cod_totaling: utf-8
 
+import time
 import sys
 from pyqtgraph.flowchart import Flowchart
 import pyqtgraph
@@ -8,87 +8,169 @@ import pyqtgraph as pg
 from PyQt4 import QtGui, QtCore
 import wiimote
 from wiimote_node import *
-import math
-
-# disable warning for deprecated npy versio
-# define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-import scipy
+import pygame
 
 
 def main():
     app = QtGui.QApplication(sys.argv)
 
-    demo = Demo()
-    #demo.show()
+    pointer = Pointer()
+    display = Display()
 
-    w = pg.GraphicsView()
-    w.show()
-    w.resize(400,400)
-    w.setWindowTitle('pyqtgraph example: Draw')
-
-    view = pg.ViewBox()
-    w.setCentralItem(view)
-
-    # lock the aspect ratio
-    #view.setAspectLocked(True)
-
-    imgFile = scipy.misc.imread("sugar.jpg")
-
-    ## Create image item
-    img = pg.ImageItem(imgFile, border='w')
-    view.addItem(img)
-
-    ## Set initial view bounds
-    view.setRange(QtCore.QRectF(0, 0, 200, 200))
-
-    #while True:
-    #    demo.update()
+    running = True
+    while running:
+        pointer.update()
+        display.update(pointer.outputValues)
+        # event handling, gets all event from the eventqueue
+        for event in pygame.event.get():
+            # only do something if the event is of type QUIT
+            if event.type == pygame.QUIT:
+                # change the value to False, to exit the main loop
+                running = False
+        time.sleep(0.05)
 
     sys.exit(app.exec_())
 
 
-# Recognize predefined and custom gestures with the WiiMote using $1 Recognizer
-class Demo(QtGui.QWidget):
+class Display:
+    def __init__(self):
+        print 'display init'
+        # initialize the pygame module
+        pygame.init()
+
+        # create a surface on screen that has the size of 240 x 180
+        self.screen = pygame.display.set_mode((1200, 700))
+
+        self.initImages()
+
+        self.pointerKeys = [('irX1', 'irY1'), ('irX2', 'irY2')]
+
+    def initImages(self):
+        # load and set the logo
+        #logo = pygame.image.load("water.jpg")
+        #pygame.display.set_icon(logo)
+        pygame.display.set_caption("minimal program")
+
+        self.bgd_image = pygame.image.load("backgr.jpg")
+        self.screen.blit(self.bgd_image, (0, -150))
+
+    def update(self, pointerValues):
+        self.screen.blit(self.bgd_image, (0, -150))
+
+        # check all pointer values for None
+        for posKeys in self.pointerKeys:
+                self.drawCircle(
+                    (0, 0, 255),
+                    pointerValues[posKeys[0]],
+                    pointerValues[posKeys[1]])
+            #else:
+                #pointerValues[key] = -pointerValues[key]
+                #pointerValues[key] = pointerValues[key] / 600
+
+            #self.drawCircle((255, 0, 0), pointerX2, pointerY2)
+        pygame.display.flip()
+
+    def drawCircle(self, color, xPos, yPos):
+        if xPos is not None and yPos is not None:
+            pygame.draw.circle(self.screen, color, (int(xPos), int(yPos)), 9, 0)
+
+
+class Pointer(QtGui.QWidget):
     def __init__(self, parent=None):
-        super(Demo, self).__init__()
+        super(Pointer, self).__init__()
 
-        #self.setWindowTitle("Gesture Recognizer")
-        #self.show()
-        #self.resize(400, 400)
-
-        #w = pg.GraphicsView()
-        #w.showFullScreen()
-        #w.resize(800,800)
-        '''
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
 
-        self.view = pg.ViewBox()
-        #self.layout.addWidget(self.view., 0, 0, 2, 1)
-        #self..setCentralItem(self.view)
+        self.buffer_amount = 20
 
+        self.fc = Flowchart(terminals={
+            'dataIn': {'io': 'in'},
+            'dataOut': {'io': 'out'}
+        })
+        self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
-        #view = pg.ViewBox()
-        #.setCentralItem(view)
-        self.imagesData = []
+        self.configNodes()
+        self.configScatterPlot()
 
-        self.imagesData.append(self.loadImage())
-        self.imageItem = pg.ImageItem(np.array(self.imagesData))
-        '''
-        #self.view.addItem(self.imageItem)
-        #self.layout.addItem(self.imageItem)
-        #self.view.setRange(QtCore.QRectF(0, 0, 200, 200))
-        #self.imageItem.setRange(QtCore.QRectF(0, 0, 200, 200))
+        self.getWiimote()
 
-        #...
+    def getWiimote(self):
+        if len(sys.argv) == 1:
+            addr, name = wiimote.find()[0]
+        elif len(sys.argv) == 2:
+            addr = sys.argv[1]
+            name = None
+        elif len(sys.argv) == 3:
+            addr, name = sys.argv[1:3]
+        print("Connecting to %s (%s)" % (name, addr))
 
-    def loadImage(self):
-        # todo: load image from file
-        imageData = np.array([(20, 10), (30, 40), (50, 60)])
-        return imageData
+        self.wiimoteNode.text.setText(addr)
+        self.wiimoteNode.connect_wiimote()
 
+    # create and connect nodes
+    def configNodes(self):
+        self.pointVisNode = self.fc.createNode('Vis3D', pos=(-150, 150))
+        self.wiimoteNode = self.fc.createNode('Wiimote', pos=(0, 0), )
+        self.bufferNode = self.fc.createNode('Buffer', pos=(0, -150))
+
+        self.buffer_amount = self.bufferNode.getBufferSize()
+
+        self.fc.connectTerminals(
+            self.wiimoteNode['irVals'],
+            self.bufferNode['dataIn'])
+        self.fc.connectTerminals(
+            self.bufferNode['dataOut'],
+            self.pointVisNode['irVals'])
+
+    # create and config scatter plot item
+    def configScatterPlot(self):
+        gview = pg.GraphicsLayoutWidget()
+        self.layout.addWidget(gview, 0, 1, 2, 1)
+
+        plot = gview.addPlot()
+        self.scatter = pg.ScatterPlotItem(
+            size=10, pen=pg.mkPen(None), brush=pg.mkBrush(255, 255, 255, 120))
+        plot.addItem(self.scatter)
+        plot.setXRange(-1000, 200)
+        plot.setYRange(-1000, 200)
+
+    def keyPressEvent(self, ev):
+        if ev.key() == QtCore.Qt.Key_Escape:
+            self.close()
+
+    # do actions in loop
     def update(self):
+        self.outputValues = self.pointVisNode.outputValues()
+
+        '''
+        isX1Valid = self.outputValues['irX1'] is not None
+        isY1Valid = self.outputValues['irY1'] is not None
+        isX2Valid = self.outputValues['irX2'] is not None
+        isY2Valid = self.outputValues['irY2'] is not None
+
+        if isX1Valid and isX2Valid and isY1Valid and isY2Valid:
+            self.scatter.setData(
+                pos=[[
+                    -self.outputValues['irX1'],
+                    -self.outputValues['irY1']],
+                    [-self.outputValues['irX2'], -self.outputValues['irY2']]],
+                size=10, pxMode=True)
+        '''
+        # raise or lower buffer amount with +/- keys
+        if self.wiimoteNode.wiimote is not None:
+            if self.wiimoteNode.wiimote.buttons['Plus']:
+                self.buffer_amount += 1
+                self.bufferNode.setBufferSize(self.buffer_amount)
+            elif self.wiimoteNode.wiimote.buttons['Minus']:
+                if self.buffer_amount > 1:
+                    self.buffer_amount -= 1
+                    self.bufferNode.setBufferSize(self.buffer_amount)
+
         pyqtgraph.QtGui.QApplication.processEvents()
+
+    #def drawPoint(self):
+
 
 
 if __name__ == "__main__":

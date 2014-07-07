@@ -1,2 +1,6 @@
 http://nullege.com/codes/search/pyqtgraph.ImageItem
 http://www.pyqtgraph.org/documentation/graphicsItems/imageitem.html
+
+http://dr0id.homepage.bluewin.ch/pygame_tutorials.html
+
+http://www.google.de/imgres?imgurl=http%3A%2F%2Fgarulabyggetjenester.com%2Fwp-content%2Fuploads%2F2013%2F09%2FWAVE-wall-room_low.jpg&imgrefurl=http%3A%2F%2Fgarulabyggetjenester.com%2F&h=899&w=1200&tbnid=1GA5dhsB0QgmHM%3A&zoom=1&docid=raEFDYKz0JX7iM&ei=q2u6U4GVAaq_ygOI74CICw&tbm=isch&iact=rc&uact=3&dur=328&page=1&start=0&ndsp=18&ved=0CC8QrQMwBQ
