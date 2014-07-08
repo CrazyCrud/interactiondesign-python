@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pyqtgraph.flowchart import Flowchart
+from pyqtgraph.flowchart import Flowchart, Node
 from pyqtgraph.flowchart.library.common import CtrlNode
 import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
@@ -23,21 +23,31 @@ of his hands - stands still, when the person walks and when
 the person runs
 '''
 
-class FileReaderNode(CtrlNode):
+
+class FileReaderNode(Node):
     '''
-    This node reads accelerometer data of a wiimote and tries
-    to identify the activities walking, lying or running by
-    analyzing this data using FFT. Using heuristics
-    the activities can be recognized.
     '''
 
     nodeName = "FileReaderNode"
 
     def __init__(self, name):
         terminals = {
-            'activity': dict(io='out'),
+            'data': dict(io='out'),
+            'categories': dict(io='out'),
         }
 
+        self.ui = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
+
+        label = QtGui.QLabel("Textfile Input:")
+        self.layout.addWidget(label)
+        self.text = QtGui.QLineEdit()
+        self.layout.addWidget(self.text)
+        self.reload_button = QtGui.QPushButton("read")
+        self.layout.addWidget(self.reload_button)
+        self.ui.setLayout(self.layout)
+        self.reload_button.clicked.connect(self._read_data)
+        self.text.setText("example.csv")
 
         self.files = {
             'walk': ['walk_1.csv', 'walk_2.csv', 'walk_3.csv', 'walk_4.csv'],
@@ -45,82 +55,41 @@ class FileReaderNode(CtrlNode):
             'stand': ['stand_1.csv', 'stand_2.csv', 'stand_3.csv', 'stand_4.csv']
         }
 
-        self.classes = ['stand', 'walk', 'hop']
+        self.output = []
+        self.categories = []
 
-        self.classifier = svm.SVC()
-
-        self.sample_data = {}
-
-        self.sample_rate = 30
-
-        self.sample_data['walk'] = self._read_data('walk')
-        self.sample_data['stand'] = self._read_data('stand')
-        self.sample_data['hop'] = self._read_data('hop')
-
-        self.sample_data['walk'] = self._transform_data(
-            self.sample_data['walk'])
-        self.sample_data['stand'] = self._transform_data(
-            self.sample_data['stand'])
-        self.sample_data['hop'] = self._transform_data(
-            self.sample_data['hop'])
-
-        self._train_data()
+        self._compute_files()
 
         CtrlNode.__init__(self, name, terminals=terminals)
 
-    def process(self, accelX, accelY, accelZ):
-        if accelX is None or accelY is None or accelZ is None:
-            return
+    # self.output = [[200, 300, 200], [100, 150, 200], ...]
+    # self.categories = ['walk', 'walk', ...]
+    def process(self):
+        return {'data': self.output,
+                'categories': self.categories}
 
-        output = self._compute_input(accelX, accelY, accelZ)
+    def _compute_files(self):
+        for key in self.files:
+            for f_name in self.files[key]:
+                self.categories.append(key)
+                self.output.append(self._read_file(f_name))
 
-        return {'activity': output}
-
-    def _read_data(self, which):
-        x = y = z = []
+    def _read_file(self, which):
+        avg = []
         try:
             sample_file = open(which, 'r')
             for line in sample_file:
                 values = line.strip().split(',')
                 if len(values) is 3:
-                    x.append(int(values[0]))
-                    y.append(int(values[1]))
-                    z.append(int(values[2]))
+                    x = int(values[0])
+                    y = int(values[1])
+                    z = int(values[2])
+                    avg.append((x + y + z) / 3)
             sample_file.close()
         except IOError:
             print 'Failed to open file ' + which
-        return (x, y, z)
+        return avg
 
-
-class SvmClassifierNode(Node):
-    '''
-    '''
-
-    nodeName = "SvmClassifierNode"
-
-    def __init__(self, name):
-        terminals = {
-            'inputData': dict(io='in'),
-            'testData': dict(io='in'),
-            'category': dict(io='out'),
-        }
-
-        self.classifier = svm.SVC()
-        self.categories = []
-
-    def process(self, inputData, testData):
-        output = 'No input data...'
-
-        if (inputData is None or inputData['training'] is None or
-                inputData['categories'] is None):
-            return {'category': output}
-
-        classifier = svm.SVC()
-        classifier.fit(inputData['training'], inputData['categories'])
-
-        output = classifier.predict(testData)
-
-        return {'category': str(output[0])}
 
 class FFTNode(Node):
     '''
@@ -138,7 +107,46 @@ class FFTNode(Node):
             'frequencies': dict(io='out'),
         }
 
+        Node.__init__(self, name, terminals=terminals)
+
+    # samples = [[200, 300, 200], [100, 150, 200], ...]
     def process(self, samples):
+        output = None
+
+        if samples is not None and len(samples) > 0:
+            minlen = min([len(x) for x in samples])
+            for data_set in samples:
+                data_set = data_set[:minlen]
+                data_length = len(data_set)
+                frequency_spectrum = np.fft.fft(data_set) / data_length
+                frequency_spectrum = frequency_spectrum[range(data_length / 2)]
+                output.append(np.abs(frequency_spectrum))
+
+        return {'frequencies': output}
+
+
+class SvmClassifierNode(Node):
+    '''
+    '''
+
+    nodeName = "SvmClassifierNode"
+
+    def __init__(self, name):
+        terminals = {
+            'trainingData': dict(io='in'),
+            'testData': dict(io='in'),
+            'categories': dict(io='in'),
+            'category': dict(io='out'),
+        }
+
+        self.classifier = svm.SVC()
+        self.categories = []
+
+        Node.__init__(self, name, terminals=terminals)
+
+    def process(self, inputData, testData):
+        output = 'No input data...'
+
         if (inputData is None or inputData['training'] is None or
                 inputData['categories'] is None):
             return {'category': output}
@@ -150,6 +158,8 @@ class FFTNode(Node):
 
         return {'category': str(output[0])}
 
+
+#----------------------OLD----------------------
 
 class ClassifierNode(CtrlNode):
     '''
