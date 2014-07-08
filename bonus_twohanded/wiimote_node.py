@@ -251,8 +251,8 @@ class Vis3DNode(Node):
     def update_ir(self, ir_vals):
         self._ir_vals = ir_vals
         self.update()
-
-    def process(self, irVals):
+        '''
+    def process2(self, irVals):
         ir_id1 = -1
         ir_id2 = -1
         rtu_values = {}
@@ -308,6 +308,59 @@ class Vis3DNode(Node):
                 avgY2 = 0
 
         return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
+        '''
+    def process(self, irVals):
+        ir_vals_count = 4
+        ir_ids = []
+        avgVals = []
+        rtu_values = {}
+
+        # init id array
+        for i in range(0, ir_vals_count):
+            ir_ids.append(-1)
+            avgVals.append((0, 0))
+
+        # sort irVals by size
+        irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
+
+        # get ids of biggest ir values
+        for ir in irVals:
+            for i in range(0, len(ir_ids)):
+                # if this position is not already set
+                if ir_ids[i] == -1:
+                    # if id is not already set elsewhere
+                    if ir_ids[i] not in ir_ids:
+                        ir_ids[i] = ir['id']
+
+            # append x/y values to list
+            if ir['id'] in rtu_values:
+                rtu_values[ir['id']]['x'].append(ir['x'])
+                rtu_values[ir['id']]['y'].append(ir['y'])
+            else:
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
+
+        avgsX = []
+        avgsY = []
+
+        # calc average x/y of the two biggest lights
+        if -1 not in ir_ids:
+            for ir_id in ir_ids:
+                for i in range(0, ir_vals_count):
+                    xVals = rtu_values[ir_id]['x']
+                    yVals = rtu_values[ir_id]['y']
+
+                    if len(xVals) > 0 and len(yVals) > 0:
+                        avgsX[ir_id] = float(sum(xVals))/len(xVals)
+                        avgsY[ir_id] = float(sum(yVals))/len(yVals)
+                    else:
+                        avgsX[ir_id] = 0
+                        avgsY[ir_id] = 0
+
+        return {
+            'irX1': avgsX[0], 'irY1': avgsY[0],
+            'irX2': avgsX[1], 'irY2': avgsY[1],
+            'irX3': avgsX[2], 'irY3': avgsY[2],
+            'irX4': avgsX[3], 'irY4': avgsY[3]}
 
 fclib.registerNodeType(Vis3DNode, [('Sensor',)])
 
