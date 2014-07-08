@@ -23,6 +23,134 @@ of his hands - stands still, when the person walks and when
 the person runs
 '''
 
+class FileReaderNode(CtrlNode):
+    '''
+    This node reads accelerometer data of a wiimote and tries
+    to identify the activities walking, lying or running by
+    analyzing this data using FFT. Using heuristics
+    the activities can be recognized.
+    '''
+
+    nodeName = "FileReaderNode"
+
+    def __init__(self, name):
+        terminals = {
+            'activity': dict(io='out'),
+        }
+
+
+        self.files = {
+            'walk': ['walk_1.csv', 'walk_2.csv', 'walk_3.csv', 'walk_4.csv'],
+            'hop': ['hop_1.csv', 'hop_2.csv', 'hop_3.csv', 'hop_4.csv'],
+            'stand': ['stand_1.csv', 'stand_2.csv', 'stand_3.csv', 'stand_4.csv']
+        }
+
+        self.classes = ['stand', 'walk', 'hop']
+
+        self.classifier = svm.SVC()
+
+        self.sample_data = {}
+
+        self.sample_rate = 30
+
+        self.sample_data['walk'] = self._read_data('walk')
+        self.sample_data['stand'] = self._read_data('stand')
+        self.sample_data['hop'] = self._read_data('hop')
+
+        self.sample_data['walk'] = self._transform_data(
+            self.sample_data['walk'])
+        self.sample_data['stand'] = self._transform_data(
+            self.sample_data['stand'])
+        self.sample_data['hop'] = self._transform_data(
+            self.sample_data['hop'])
+
+        self._train_data()
+
+        CtrlNode.__init__(self, name, terminals=terminals)
+
+    def process(self, accelX, accelY, accelZ):
+        if accelX is None or accelY is None or accelZ is None:
+            return
+
+        output = self._compute_input(accelX, accelY, accelZ)
+
+        return {'activity': output}
+
+    def _read_data(self, which):
+        x = y = z = []
+        try:
+            sample_file = open(which, 'r')
+            for line in sample_file:
+                values = line.strip().split(',')
+                if len(values) is 3:
+                    x.append(int(values[0]))
+                    y.append(int(values[1]))
+                    z.append(int(values[2]))
+            sample_file.close()
+        except IOError:
+            print 'Failed to open file ' + which
+        return (x, y, z)
+
+
+class SvmClassifierNode(Node):
+    '''
+    '''
+
+    nodeName = "SvmClassifierNode"
+
+    def __init__(self, name):
+        terminals = {
+            'inputData': dict(io='in'),
+            'testData': dict(io='in'),
+            'category': dict(io='out'),
+        }
+
+        self.classifier = svm.SVC()
+        self.categories = []
+
+    def process(self, inputData, testData):
+        output = 'No input data...'
+
+        if (inputData is None or inputData['training'] is None or
+                inputData['categories'] is None):
+            return {'category': output}
+
+        classifier = svm.SVC()
+        classifier.fit(inputData['training'], inputData['categories'])
+
+        output = classifier.predict(testData)
+
+        return {'category': str(output[0])}
+
+class FFTNode(Node):
+    '''
+    This node reads accelerometer data of a wiimote and tries
+    to identify the activities walking, lying or running by
+    analyzing this data using FFT. Using heuristics
+    the activities can be recognized.
+    '''
+
+    nodeName = "FFTNode"
+
+    def __init__(self, name):
+        terminals = {
+            'samples': dict(io='in'),
+            'frequencies': dict(io='out'),
+        }
+
+    def process(self, samples):
+        if (inputData is None or inputData['training'] is None or
+                inputData['categories'] is None):
+            return {'category': output}
+
+        classifier = svm.SVC()
+        classifier.fit(inputData['training'], inputData['categories'])
+
+        output = classifier.predict(testData)
+
+        return {'category': str(output[0])}
+
+
 class ClassifierNode(CtrlNode):
     '''
     This node reads accelerometer data of a wiimote and tries
