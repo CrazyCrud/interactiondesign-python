@@ -12,6 +12,7 @@ import scipy
 import math
 import os
 import csv
+import re
 from sklearn import svm
 from sklearn import datasets
 from sklearn.preprocessing import scale, StandardScaler, MinMaxScaler
@@ -72,9 +73,17 @@ class FileReaderNode(Node):
         f_name = str(self.text.text()).strip()
         try:
             open(f_name, 'r')
-            pass
+            for key in self.files:
+                if key in f_name:
+                    self.files[key].append(f_name)
+                    self._compute_files()
+                    break
+        except:
+            print 'Failed to open file ' + f_name
 
     def _compute_files(self):
+        del self.output[:]
+        del self.categories[:]
         for key in self.files:
             for f_name in self.files[key]:
                 avg = self._read_file(f_name)
@@ -121,6 +130,8 @@ class LiveFFTNode(Node):
 
     # samples = [[200, 300, 200], [100, 150, 200], ...]
     # accelX = [500, 100, 300, ...]
+    # accelY = [500, 100, 300, ...]
+    # accelZ = [500, 100, 300, ...]
     def process(self, samples, accelX, accelY, accelZ):
         samples_output = test_output = None
 
@@ -182,6 +193,9 @@ class SvmClassifierNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
+    # trainingData = [[1.9, 0.5, 0.2], [0.1, 0.5, 2.0], ...]
+    # testData = [1.7, 0.4, 0.2]
+    # categories = ['walk', 'walk', 'hop']
     def process(self, trainingData, testData, categories):
         output = 'No input data...'
 
@@ -212,10 +226,19 @@ class CategoryVisualizerNode(Node):
             'classification': dict(io='in'),
         }
 
+        self.ui = QtGui.QWidget()
+        self.layout = QtGui.QGridLayout()
+
+        self.label_desc = QtGui.QLabel("Current Activity:")
+        self.layout.addWidget(self.label_desc)
+        self.label_activity = QtGui.QLabel("No activity...")
+        self.layout.addWidget(self.label_activity)
+        self.ui.setLayout(self.layout)
+
         Node.__init__(self, name, terminals=terminals)
 
     def process(self, classification):
-        pass
+        self.label_activity.setText(classification)
 
 
 #----------------------OLD----------------------
