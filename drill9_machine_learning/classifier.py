@@ -61,13 +61,16 @@ class FileReaderNode(Node):
 
         self._compute_files()
 
-        CtrlNode.__init__(self, name, terminals=terminals)
+        Node.__init__(self, name, terminals=terminals)
 
     # self.output = [[200, 300, 200], [100, 150, 200], ...]
     # self.categories = ['walk', 'walk', ...]
     def process(self):
         return {'data': self.output,
                 'categories': self.categories}
+
+    def ctrlWidget(self):
+        return self.ui
 
     def _add_file(self):
         f_name = str(self.text.text()).strip()
@@ -116,7 +119,7 @@ class LiveFFTNode(Node):
     '''
     '''
 
-    nodeName = "FFTLiveNode"
+    nodeName = "LiveFFTNode"
 
     def __init__(self, name):
         terminals = {
@@ -239,7 +242,7 @@ class CategoryVisualizerNode(Node):
         self.layout.addWidget(self.label_desc)
         self.label_activity = QtGui.QLabel("No activity...")
         font = QtGui.QFont("Arial")
-        font.setPointSize(32)
+        font.setPointSize(16)
         self.label_activity.setFont(font)
         self.layout.addWidget(self.label_activity)
         self.ui.setLayout(self.layout)
@@ -247,7 +250,11 @@ class CategoryVisualizerNode(Node):
         Node.__init__(self, name, terminals=terminals)
 
     def process(self, classification):
-        self.label_activity.setText(classification)
+        if classification is not None:
+            self.label_activity.setText(classification)
+
+    def ctrlWidget(self):
+        return self.ui
 
 fclib.registerNodeType(CategoryVisualizerNode, [('Data',)])
 
@@ -315,7 +322,6 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(pwX, 0, 1)
         self.layout.addWidget(pwY, 1, 1)
         self.layout.addWidget(pwZ, 2, 1)
-        self.layout.addWidget(self.label, 3, 1)
 
         pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
         pwXNode.setPlot(pwX)
@@ -328,7 +334,7 @@ class Demo(QtGui.QWidget):
 
         self.fileReaderNode = self.fc.createNode('FileReaderNode', pos=(0, 150))
         self.fftNode = self.fc.createNode('LiveFFTNode', pos=(0, 300))
-        self.classifierNode = self.fc.createNode('SVMClassifierNode', pos=(150, 150))
+        self.classifierNode = self.fc.createNode('SvmClassifierNode', pos=(150, 150))
         self.visualizerNode = self.fc.createNode('CategoryVisualizerNode', pos=(150, 150))
 
         """
