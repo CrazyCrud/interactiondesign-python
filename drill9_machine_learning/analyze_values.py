@@ -47,7 +47,7 @@ class FileReaderNode(Node):
         self.layout.addWidget(self.reload_button)
         self.ui.setLayout(self.layout)
         self.reload_button.clicked.connect(self._read_data)
-        self.text.setText("example.csv")
+        self.text.setText("example_1.csv")
 
         self.files = {
             'walk': ['walk_1.csv', 'walk_2.csv', 'walk_3.csv', 'walk_4.csv'],
@@ -91,38 +91,69 @@ class FileReaderNode(Node):
         return avg
 
 
-class FFTNode(Node):
+class LiveFFTNode(Node):
     '''
-    This node reads accelerometer data of a wiimote and tries
-    to identify the activities walking, lying or running by
-    analyzing this data using FFT. Using heuristics
-    the activities can be recognized.
     '''
 
-    nodeName = "FFTNode"
+    nodeName = "FFTLiveNode"
 
     def __init__(self, name):
         terminals = {
             'samples': dict(io='in'),
-            'frequencies': dict(io='out'),
+            'accelX': dict(io='in'),
+            'accelY': dict(io='in'),
+            'accelZ': dict(io='in'),
+            'samplesFrequencies': dict(io='out'),
+            'testFrequencies': dict(io='out'),
         }
 
         Node.__init__(self, name, terminals=terminals)
 
     # samples = [[200, 300, 200], [100, 150, 200], ...]
-    def process(self, samples):
-        output = None
+    # accelX = [500, 100, 300, ...]
+    def process(self, samples, accelX, accelY, accelZ):
+        samples_output = test_output = None
 
-        if samples is not None and len(samples) > 0:
-            minlen = min([len(x) for x in samples])
+        if (accelX is None or accelY is None or accelZ is None
+                or samples is None):
+            return {'samplesFrequencies': samples_output,
+                    'testFrequencies': test_output}
+
+        accel_avg = self._compute_raw_data(accelX, accelY, accelZ)
+
+        if len(accel_avg) > 0 and len(samples) > 0:
+            samples_min = min([len(x) for x in samples])
+            accel_min = len(accel_avg)
+            minlen = accel_min if accel_min <= samples_min else samples_min
+
             for data_set in samples:
                 data_set = data_set[:minlen]
-                data_length = len(data_set)
-                frequency_spectrum = np.fft.fft(data_set) / data_length
-                frequency_spectrum = frequency_spectrum[range(data_length / 2)]
-                output.append(np.abs(frequency_spectrum))
+                samples_output.append(self._fft(data_set))
 
-        return {'frequencies': output}
+            accel_avg = accel_avg[:minlen]
+            test_output = self._fft(accel_avg)
+
+        return {'samplesFrequencies': samples_output,
+                'testFrequencies': test_output}
+
+    def _compute_raw_data(self, accelX, accelY, accelZ):
+        accel_min = min([len(accelX), len(accelY), len(accelZ)])
+        accelX = accelX[:accel_min]
+        accelY = accelY[:accel_min]
+        accelZ = accelZ[:accel_min]
+        accel_avg = []
+        for i in range(0, len(accelX)):
+            x = int(accelX[i])
+            y = int(accelY[i])
+            z = int(accelZ[i])
+            accel_avg.append((x + y + z) / 3)
+        return accel_avg
+
+    def _fft(self, data):
+        data_length = len(data)
+        frequency_spectrum = np.fft.fft(data) / data_length
+        frequency_spectrum = frequency_spectrum[range(data_length / 2)]
+        return np.abs(frequency_spectrum)
 
 
 class SvmClassifierNode(Node):
@@ -139,24 +170,42 @@ class SvmClassifierNode(Node):
             'category': dict(io='out'),
         }
 
-        self.classifier = svm.SVC()
-        self.categories = []
-
         Node.__init__(self, name, terminals=terminals)
 
-    def process(self, inputData, testData):
+    def process(self, trainingData, testData, categories):
         output = 'No input data...'
 
-        if (inputData is None or inputData['training'] is None or
-                inputData['categories'] is None):
+        if (trainingData is None or testData is None or
+                categories is None):
             return {'category': output}
 
         classifier = svm.SVC()
-        classifier.fit(inputData['training'], inputData['categories'])
+        try:
+            classifier.fit(trainingData, categories)
+        except ValueError:
+            output = 'Number of features are not equal'
+            return {'category': output}
 
         output = classifier.predict(testData)
 
         return {'category': str(output[0])}
+
+
+class CategoryVisualizerNode(Node):
+    '''
+    '''
+
+    nodeName = "CategoryVisualizerNode"
+
+    def __init__(self, name):
+        terminals = {
+            'classification': dict(io='in'),
+        }
+
+        Node.__init__(self, name, terminals=terminals)
+
+    def process(self, classification):
+        pass
 
 
 #----------------------OLD----------------------
