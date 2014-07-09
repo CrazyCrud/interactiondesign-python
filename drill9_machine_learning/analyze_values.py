@@ -46,7 +46,7 @@ class FileReaderNode(Node):
         self.reload_button = QtGui.QPushButton("read")
         self.layout.addWidget(self.reload_button)
         self.ui.setLayout(self.layout)
-        self.reload_button.clicked.connect(self._read_data)
+        self.reload_button.clicked.connect(self._add_file)
         self.text.setText("example_1.csv")
 
         self.files = {
@@ -68,11 +68,21 @@ class FileReaderNode(Node):
         return {'data': self.output,
                 'categories': self.categories}
 
+    def _add_file(self):
+        f_name = str(self.text.text()).strip()
+        try:
+            open(f_name, 'r')
+            pass
+
     def _compute_files(self):
         for key in self.files:
             for f_name in self.files[key]:
-                self.categories.append(key)
-                self.output.append(self._read_file(f_name))
+                avg = self._read_file(f_name)
+                if len(avg) > 0:
+                    self.output.append(self._read_file(f_name))
+                    self.categories.append(key)
+                else:
+                    continue
 
     def _read_file(self, which):
         avg = []
