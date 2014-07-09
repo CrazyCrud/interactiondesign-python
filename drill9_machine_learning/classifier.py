@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from pyqtgraph.flowchart import Flowchart, Node
-from pyqtgraph.flowchart.library.common import CtrlNode
 import pyqtgraph.flowchart.library as fclib
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
@@ -8,14 +7,8 @@ import numpy as np
 import sys
 #import wiimote
 #from wiimote_node import *
-import scipy
-import math
-import os
-import csv
-import re
 from sklearn import svm
-from sklearn import datasets
-from sklearn.preprocessing import scale, StandardScaler, MinMaxScaler
+
 
 '''
 The demo application identifies three different states:
@@ -337,6 +330,7 @@ class Demo(QtGui.QWidget):
         self.classifierNode = self.fc.createNode('SvmClassifierNode', pos=(150, 150))
         self.visualizerNode = self.fc.createNode('CategoryVisualizerNode', pos=(150, 150))
 
+        # Einkommentieren falls Wiimote
         """
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
         self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
