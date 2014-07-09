@@ -192,7 +192,7 @@ class SvmClassifierNode(Node):
             'trainingData': dict(io='in'),
             'testData': dict(io='in'),
             'categories': dict(io='in'),
-            'category': dict(io='out'),
+            'classification': dict(io='out'),
         }
 
         Node.__init__(self, name, terminals=terminals)
@@ -205,18 +205,18 @@ class SvmClassifierNode(Node):
 
         if (trainingData is None or testData is None or
                 categories is None):
-            return {'category': output}
+            return {'classification': output}
 
         classifier = svm.SVC()
         try:
             classifier.fit(trainingData, categories)
         except ValueError:
             output = 'Number of features are not equal'
-            return {'category': output}
+            return {'classification': output}
 
         output = classifier.predict(testData)
 
-        return {'category': str(output[0])}
+        return {'classification': str(output[0])}
 
 fclib.registerNodeType(SvmClassifierNode, [('Data',)])
 
@@ -238,6 +238,9 @@ class CategoryVisualizerNode(Node):
         self.label_desc = QtGui.QLabel("Current Activity:")
         self.layout.addWidget(self.label_desc)
         self.label_activity = QtGui.QLabel("No activity...")
+        font = QtGui.QFont("Arial")
+        font.setPointSize(32)
+        self.label_activity.setFont(font)
         self.layout.addWidget(self.label_activity)
         self.ui.setLayout(self.layout)
 
@@ -247,123 +250,6 @@ class CategoryVisualizerNode(Node):
         self.label_activity.setText(classification)
 
 fclib.registerNodeType(CategoryVisualizerNode, [('Data',)])
-
-
-#----------------------OLD----------------------
-
-class ClassifierNode(CtrlNode):
-    '''
-    This node reads accelerometer data of a wiimote and tries
-    to identify the activities walking, lying or running by
-    analyzing this data using FFT. Using heuristics
-    the activities can be recognized.
-    '''
-
-    nodeName = "ClassifierNode"
-
-    def __init__(self, name):
-        terminals = {
-            'accelX': dict(io='in'),
-            'accelY': dict(io='in'),
-            'accelZ': dict(io='in'),
-            'activity': dict(io='out'),
-        }
-
-
-        self.activities = {
-            'walk': 'You\'re walking',
-            'hop': 'You\'re running', 'none': 'No activity yet...',
-            'stand': 'You\'re standing',
-            'nodata': 'Computing data...'}
-
-        self.classes = ['stand', 'walk', 'hop']
-
-        self.classifier = svm.SVC()
-
-        self.sample_data = {}
-
-        self.sample_rate = 30
-
-        self.sample_data['walk'] = self._read_data('walk')
-        self.sample_data['stand'] = self._read_data('stand')
-        self.sample_data['hop'] = self._read_data('hop')
-
-        self.sample_data['walk'] = self._transform_data(
-            self.sample_data['walk'])
-        self.sample_data['stand'] = self._transform_data(
-            self.sample_data['stand'])
-        self.sample_data['hop'] = self._transform_data(
-            self.sample_data['hop'])
-
-        self._train_data()
-
-        CtrlNode.__init__(self, name, terminals=terminals)
-
-    def process(self, accelX, accelY, accelZ):
-        if accelX is None or accelY is None or accelZ is None:
-            return
-
-        output = self._compute_input(accelX, accelY, accelZ)
-
-        return {'activity': output}
-
-    def _read_data(self, which):
-        x = y = z = []
-        i = 0
-        while True:
-            i += 1
-            try:
-                sample_file = open(which + "_" + str(i) + ".csv", 'r')
-                for line in sample_file:
-                    values = line.strip().split(',')
-                    if len(values) is 3:
-                        x.append(int(values[0]))
-                        y.append(int(values[1]))
-                        z.append(int(values[2]))
-                sample_file.close()
-            except IOError:
-                break
-        return (x, y, z)
-
-    def _transform_data(self, sample):
-        x_data = sample[0]
-        x_frequencies = self._fft(x_data)[:self.sample_rate]
-
-        y_data = sample[1]
-        y_frequencies = self._fft(y_data)[:self.sample_rate]
-
-        z_data = sample[2]
-        z_frequencies = self._fft(z_data)[:self.sample_rate]
-
-        return x_frequencies + y_frequencies \
-            + z_frequencies
-
-    def _train_data(self):
-        sample = [
-            self.sample_data['stand'], self.sample_data['walk'],
-            self.sample_data['hop']]
-        self.classifier.fit(sample, self.classes)
-
-    def _compute_input(self, accelX, accelY, accelZ):
-        if (len(accelX) < self.sample_rate * 2 or
-                len(accelY) < self.sample_rate * 2 or
-                len(accelZ) < self.sample_rate * 2):
-            return self.activities['nodata']
-        else:
-            live_data = self._transform_data((accelX, accelY, accelZ))
-            action = self.classifier.predict(live_data, self.classes)
-            return self.activities[str(action)]
-
-    def _fft(self, data):
-        data_length = len(data)
-        frequencies = scipy.fft(data) / data_length
-        frequencies = frequencies[range(data_length / 2)]
-        frequencies[0] = 0
-        frequencies = np.abs(frequencies)
-        return frequencies
-
-
-fclib.registerNodeType(ClassifierNode, [('Data',)])
 
 
 def main():
@@ -412,9 +298,6 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.connect_wiimote()
 
     def update(self):
-        outputValues = self.activityNode.outputValues()
-        if outputValues['activity'] is not None:
-            self.label.setText(outputValues['activity'])
         pg.QtGui.QApplication.processEvents()
 
     # create and config the nodes needed to recognize activities
@@ -428,12 +311,6 @@ class Demo(QtGui.QWidget):
         pwY.setYRange(300, 700)
         pwZ.getPlotItem().hideAxis('bottom')
         pwZ.setYRange(300, 700)
-
-        self.label = QtGui.QLabel()
-        self.label.setText("No activity yet...")
-        font = QtGui.QFont("Arial")
-        font.setPointSize(32)
-        self.label.setFont(font)
 
         self.layout.addWidget(pwX, 0, 1)
         self.layout.addWidget(pwY, 1, 1)
@@ -449,7 +326,10 @@ class Demo(QtGui.QWidget):
         pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
         pwZNode.setPlot(pwZ)
 
-        self.activityNode = self.fc.createNode('ClassifierNode', pos=(0, 150))
+        self.fileReaderNode = self.fc.createNode('FileReaderNode', pos=(0, 150))
+        self.fftNode = self.fc.createNode('LiveFFTNode', pos=(0, 300))
+        self.classifierNode = self.fc.createNode('SVMClassifierNode', pos=(150, 150))
+        self.visualizerNode = self.fc.createNode('CategoryVisualizerNode', pos=(150, 150))
 
         """
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
@@ -463,15 +343,30 @@ class Demo(QtGui.QWidget):
             self.wiimoteNode['accelY'], self.bufferYNode['dataIn'])
         self.fc.connectTerminals(
             self.wiimoteNode['accelZ'], self.bufferZNode['dataIn'])
+
         self.fc.connectTerminals(self.bufferXNode['dataOut'], pwXNode['In'])
         self.fc.connectTerminals(self.bufferYNode['dataOut'], pwYNode['In'])
         self.fc.connectTerminals(self.bufferZNode['dataOut'], pwZNode['In'])
+
         self.fc.connectTerminals(
-            self.bufferXNode['dataOut'], self.activityNode['accelX'])
+            self.bufferXNode['dataOut'], self.fftNode['accelX'])
         self.fc.connectTerminals(
-            self.bufferYNode['dataOut'], self.activityNode['accelY'])
+            self.bufferYNode['dataOut'], self.fftNode['accelY'])
         self.fc.connectTerminals(
-            self.bufferZNode['dataOut'], self.activityNode['accelZ'])
+            self.bufferZNode['dataOut'], self.fftNode['accelZ'])
+
+        self.fc.connectTerminals(
+            self.fileReaderNode['data'], self.fftNode['samples'])
+        self.fc.connectTerminals(
+            self.fileReaderNode['categories'], self.classifierNode['categories'])
+
+        self.fc.connectTerminals(
+            self.fftNode['samplesFrequencies'], self.classifierNode['trainingData'])
+        self.fc.connectTerminals(
+            self.fftNode['testFrequencies'], self.classifierNode['testData'])
+
+        self.fc.connectTerminals(
+            self.classifierNode['classification'], self.visualizerNode['classification'])
         """
 
     def keyPressEvent(self, ev):
