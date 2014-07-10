@@ -88,6 +88,7 @@ class FileReaderNode(Node):
                     self.categories.append(key)
                 else:
                     continue
+        self.update()
 
     def _read_file(self, which):
         avg = []
