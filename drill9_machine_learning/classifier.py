@@ -74,6 +74,7 @@ class FileReaderNode(Node):
                     self.files[key].append(f_name)
                     self._compute_files()
                     break
+            self.update()
         except:
             print 'Failed to open file ' + f_name
 
@@ -88,7 +89,6 @@ class FileReaderNode(Node):
                     self.categories.append(key)
                 else:
                     continue
-        self.update()
 
     def _read_file(self, which):
         avg = []
