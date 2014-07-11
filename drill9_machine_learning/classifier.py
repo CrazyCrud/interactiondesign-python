@@ -5,8 +5,8 @@ from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 import numpy as np
 import sys
-#import wiimote
-#from wiimote_node import *
+import wiimote
+from wiimote_node import *
 from sklearn import svm
 
 
@@ -25,6 +25,7 @@ class FileReaderNode(Node):
     nodeName = "FileReaderNode"
 
     def __init__(self, name):
+        print 'FileReaderNode init'
         terminals = {
             'data': dict(io='out'),
             'categories': dict(io='out'),
@@ -59,6 +60,9 @@ class FileReaderNode(Node):
     # self.output = [[200, 300, 200], [100, 150, 200], ...]
     # self.categories = ['walk', 'walk', ...]
     def process(self):
+        print 'FileReaderNode process'
+        #print self.output
+        #print self.categories
         return {'data': self.output,
                 'categories': self.categories}
 
@@ -66,6 +70,7 @@ class FileReaderNode(Node):
         return self.ui
 
     def _add_file(self):
+        print 'add file'
         f_name = str(self.text.text()).strip()
         try:
             open(f_name, 'r')
@@ -116,6 +121,7 @@ class LiveFFTNode(Node):
     nodeName = "LiveFFTNode"
 
     def __init__(self, name):
+        print 'init LiveFFTNode'
         terminals = {
             'samples': dict(io='in'),
             'accelX': dict(io='in'),
@@ -132,26 +138,36 @@ class LiveFFTNode(Node):
     # accelY = [500, 100, 300, ...]
     # accelZ = [500, 100, 300, ...]
     def process(self, samples, accelX, accelY, accelZ):
+        #print 'process LiveFFTNode'
         samples_output = test_output = None
 
+        if samples is not None:
+            print 'samples not None'
+            self.newSamples = samples
+
         if (accelX is None or accelY is None or accelZ is None
-                or samples is None):
+                or self.newSamples is None):
             return {'samplesFrequencies': samples_output,
                     'testFrequencies': test_output}
 
         accel_avg = self._compute_raw_data(accelX, accelY, accelZ)
 
-        if len(accel_avg) > 0 and len(samples) > 0:
-            samples_min = min([len(x) for x in samples])
+        if len(accel_avg) > 0 and len(self.newSamples) > 0:
+            samples_min = min([len(x) for x in self.newSamples])
             accel_min = len(accel_avg)
             minlen = accel_min if accel_min <= samples_min else samples_min
 
-            for data_set in samples:
+            for data_set in self.newSamples:
                 data_set = data_set[:minlen]
                 samples_output.append(self._fft(data_set))
 
             accel_avg = accel_avg[:minlen]
             test_output = self._fft(accel_avg)
+
+        print 'samples_output'
+        print samples_output
+        print 'test_ouput'
+        print test_ouput
 
         return {'samplesFrequencies': samples_output,
                 'testFrequencies': test_output}
@@ -204,10 +220,15 @@ class SvmClassifierNode(Node):
                 categories is None):
             return {'classification': output}
 
+        print 'SVM process'
         classifier = svm.SVC()
         try:
+            print 'SVM try'
+            print trainingData
+            print categories
             classifier.fit(trainingData, categories)
         except ValueError:
+            print 'SVM except'
             output = 'Number of features are not equal'
             return {'classification': output}
 
@@ -282,7 +303,7 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 4, 1)
 
         self.createNodes()
-        #self.getWiimote()
+        self.getWiimote()
 
     # connect to wiimote with an address given as argument
     def getWiimote(self):
@@ -332,7 +353,7 @@ class Demo(QtGui.QWidget):
         self.visualizerNode = self.fc.createNode('CategoryVisualizerNode', pos=(150, 150))
 
         # Einkommentieren falls Wiimote
-        """
+        #"""
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
         self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
         self.bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
@@ -368,7 +389,10 @@ class Demo(QtGui.QWidget):
 
         self.fc.connectTerminals(
             self.classifierNode['classification'], self.visualizerNode['classification'])
-        """
+
+
+        self.fileReaderNode.process()
+        #"""
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
