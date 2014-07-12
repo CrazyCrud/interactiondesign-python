@@ -1,0 +1,1 @@
+With the appliciation classifier.py the movements hop, stand and walk can be recognized.
