@@ -20,12 +20,15 @@ the person runs
 
 class FileReaderNode(Node):
     '''
+    This node reads sample data out of .csv files. It provides
+    a textfield and a button with which additional files can be
+    loaded. It splits the data into x,y and z data, calculates
+    and outputs sample data's average and all categories.
     '''
 
     nodeName = "FileReaderNode"
 
     def __init__(self, name):
-        print 'FileReaderNode init'
         terminals = {
             'data': dict(io='out'),
             'categories': dict(io='out'),
@@ -45,9 +48,12 @@ class FileReaderNode(Node):
         self.text.setText("example_1.csv")
 
         self.files = {
-            'walk': ['walk_1.csv', 'walk_2.csv', 'walk_3.csv', 'walk_4.csv'],
-            'hop': ['hop_1.csv', 'hop_2.csv', 'hop_3.csv', 'hop_4.csv'],
-            'stand': ['stand_1.csv', 'stand_2.csv', 'stand_3.csv', 'stand_4.csv']
+            'walk': ['walk_1.csv', 'walk_2.csv',
+                     'walk_3.csv', 'walk_4.csv'],
+            'hop': ['hop_1.csv', 'hop_2.csv',
+                    'hop_3.csv', 'hop_4.csv'],
+            'stand': ['stand_1.csv', 'stand_2.csv',
+                      'stand_3.csv', 'stand_4.csv']
         }
 
         self.output = []
@@ -57,12 +63,7 @@ class FileReaderNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
-    # self.output = [[200, 300, 200], [100, 150, 200], ...]
-    # self.categories = ['walk', 'walk', ...]
     def process(self):
-        print 'FileReaderNode process'
-        #print self.output#is filled
-        #print self.categories
         return {'data': self.output,
                 'categories': self.categories}
 
@@ -70,7 +71,6 @@ class FileReaderNode(Node):
         return self.ui
 
     def _add_file(self):
-        print 'add file'
         f_name = str(self.text.text()).strip()
         try:
             open(f_name, 'r')
@@ -78,20 +78,19 @@ class FileReaderNode(Node):
                 if key in f_name:
                     self.files[key].append(f_name)
                     self._compute_files()
+                    self.update()
                     break
-            self.update()
         except:
             print 'Failed to open file ' + f_name
 
     def _compute_files(self):
-        print 'compute_files'
         del self.output[:]
         del self.categories[:]
         for key in self.files:
             for f_name in self.files[key]:
                 avg = self._read_file(f_name)
                 if len(avg) > 0:
-                    self.output.append(self._read_file(f_name))
+                    self.output.append(avg)
                     self.categories.append(key)
                 else:
                     continue
@@ -117,12 +116,14 @@ fclib.registerNodeType(FileReaderNode, [('Data',)])
 
 class LiveFFTNode(Node):
     '''
+    This node accepts sampleData and accelData.
+    It analyzes them with fft and ouputs the
+    calculated test and sample frequencies.
     '''
 
     nodeName = "LiveFFTNode"
 
     def __init__(self, name):
-        print 'init LiveFFTNode'
         terminals = {
             'samples': dict(io='in'),
             'accelX': dict(io='in'),
@@ -136,31 +137,14 @@ class LiveFFTNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
-    # samples = [[200, 300, 200], [100, 150, 200], ...]
-    # accelX = [500, 100, 300, ...]
-    # accelY = [500, 100, 300, ...]
-    # accelZ = [500, 100, 300, ...]
     def process(self, samples, accelX, accelY, accelZ):
-        #print 'process LiveFFTNode'
         samples_output = test_output = []
 
         if samples is not None:
-            #print 'samples not None'
             self.newSamples = samples
-        '''
-        if accelX is None:
-            print 'accelX is None'
-        if accelY is None:
-            print 'accelY is None'
-        if accelZ is None:
-            print 'accelZ is None'
-        if self.newSamples is not None:
-            print 'self.newSamples is not None'
-        '''
+
         if (accelX is None or accelY is None or accelZ is None
                 or self.newSamples is None):
-            print 'fft None ouput'
-            #print 'samples None'
             return {'samplesFrequencies': samples_output,
                     'testFrequencies': test_output}
 
@@ -172,19 +156,11 @@ class LiveFFTNode(Node):
             minlen = accel_min if accel_min <= samples_min else samples_min
 
             for data_set in self.newSamples:
-                #print self.newSamples['data']
-                #print data_set
                 data_set = data_set[:minlen]
                 samples_output.append(self._fft(data_set))
 
-
             accel_avg = accel_avg[:minlen]
             test_output = self._fft(accel_avg)
-
-        if samples_output is None:
-            print 'samples_output is None'
-        if test_output is None:
-            print 'test_ouput is None'
 
         return {'samplesFrequencies': samples_output,
                 'testFrequencies': test_output}
@@ -213,6 +189,7 @@ fclib.registerNodeType(LiveFFTNode, [('Data',)])
 
 class SvmClassifierNode(Node):
     '''
+    This node classifies testData using an SVM-algorithm.
     '''
 
     nodeName = "SvmClassifierNode"
@@ -227,9 +204,6 @@ class SvmClassifierNode(Node):
 
         Node.__init__(self, name, terminals=terminals)
 
-    # trainingData = [[1.9, 0.5, 0.2], [0.1, 0.5, 2.0], ...]
-    # testData = [1.7, 0.4, 0.2]
-    # categories = ['walk', 'walk', 'hop']
     def process(self, trainingData, testData, categories):
         output = 'No input data...'
 
@@ -237,15 +211,10 @@ class SvmClassifierNode(Node):
                 categories is None):
             return {'classification': output}
 
-        print 'SVM process'
         classifier = svm.SVC()
         try:
-            print 'SVM try'
-            #print trainingData
-            #print categories
             classifier.fit(trainingData, categories)
         except ValueError:
-            print 'SVM except'
             output = 'Number of features are not equal'
             return {'classification': output}
 
@@ -258,6 +227,8 @@ fclib.registerNodeType(SvmClassifierNode, [('Data',)])
 
 class CategoryVisualizerNode(Node):
     '''
+    This node visualizes the result of categorization
+    in a text label.
     '''
 
     nodeName = "CategoryVisualizerNode"
@@ -303,6 +274,10 @@ def main():
 
 
 class Demo(QtGui.QWidget):
+    '''
+    The main class which controls initialization and
+    processing.
+    '''
     def __init__(self, parent=None):
         super(Demo, self).__init__()
 
@@ -320,6 +295,7 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 4, 1)
 
         self.createNodes()
+
         self.getWiimote()
 
     # connect to wiimote with an address given as argument
@@ -337,7 +313,6 @@ class Demo(QtGui.QWidget):
         self.wiimoteNode.connect_wiimote()
 
     def update(self):
-
         # let the app process events
         pg.QtGui.QApplication.processEvents()
 
@@ -357,6 +332,7 @@ class Demo(QtGui.QWidget):
         self.layout.addWidget(pwY, 1, 1)
         self.layout.addWidget(pwZ, 2, 1)
 
+        # create nodes
         pwXNode = self.fc.createNode('PlotWidget', pos=(-150, -150))
         pwXNode.setPlot(pwX)
 
@@ -366,13 +342,15 @@ class Demo(QtGui.QWidget):
         pwZNode = self.fc.createNode('PlotWidget', pos=(150, -150))
         pwZNode.setPlot(pwZ)
 
-        self.fileReaderNode = self.fc.createNode('FileReaderNode', pos=(0, 150))
-        self.fftNode = self.fc.createNode('LiveFFTNode', pos=(0, 300))
-        self.classifierNode = self.fc.createNode('SvmClassifierNode', pos=(150, 150))
-        self.visualizerNode = self.fc.createNode('CategoryVisualizerNode', pos=(150, 150))
+        self.fileReaderNode = self.fc.createNode(
+            'FileReaderNode', pos=(0, 150))
+        self.fftNode = self.fc.createNode(
+            'LiveFFTNode', pos=(0, 300))
+        self.classifierNode = self.fc.createNode(
+            'SvmClassifierNode', pos=(150, 150))
+        self.visualizerNode = self.fc.createNode(
+            'CategoryVisualizerNode', pos=(300, 150))
 
-        # Einkommentieren falls Wiimote
-        #"""
         self.wiimoteNode = self.fc.createNode('Wiimote', pos=(-300, 0))
         self.bufferXNode = self.fc.createNode('Buffer', pos=(-150, -300))
         self.bufferYNode = self.fc.createNode('Buffer', pos=(0, -300))
@@ -385,9 +363,18 @@ class Demo(QtGui.QWidget):
         self.fc.connectTerminals(
             self.wiimoteNode['accelZ'], self.bufferZNode['dataIn'])
 
-        self.fc.connectTerminals(self.bufferXNode['dataOut'], pwXNode['In'])
-        self.fc.connectTerminals(self.bufferYNode['dataOut'], pwYNode['In'])
-        self.fc.connectTerminals(self.bufferZNode['dataOut'], pwZNode['In'])
+        self.fc.connectTerminals(
+            self.bufferXNode['dataOut'], pwXNode['In'])
+        self.fc.connectTerminals(
+            self.bufferYNode['dataOut'], pwYNode['In'])
+        self.fc.connectTerminals(
+            self.bufferZNode['dataOut'], pwZNode['In'])
+
+        self.fc.connectTerminals(
+            self.fileReaderNode['data'], self.fftNode['samples'])
+        self.fc.connectTerminals(
+            self.fileReaderNode['categories'],
+            self.classifierNode['categories'])
 
         self.fc.connectTerminals(
             self.bufferXNode['dataOut'], self.fftNode['accelX'])
@@ -396,27 +383,18 @@ class Demo(QtGui.QWidget):
         self.fc.connectTerminals(
             self.bufferZNode['dataOut'], self.fftNode['accelZ'])
 
-        #self.fc.connectTerminals(
-        #    self.fileReaderNode['data'], self.fftNode['samples'])
-        #self.fc.connectTerminals(
-        #    self.fileReaderNode['categories'], self.classifierNode['categories'])
+        self.fc.connectTerminals(
+            self.fftNode['samplesFrequencies'],
+            self.classifierNode['trainingData'])
+        self.fc.connectTerminals(
+            self.fftNode['testFrequencies'],
+            self.classifierNode['testData'])
 
         self.fc.connectTerminals(
-            self.fftNode['samplesFrequencies'], self.classifierNode['trainingData'])
-        self.fc.connectTerminals(
-            self.fftNode['testFrequencies'], self.classifierNode['testData'])
+            self.classifierNode['classification'],
+            self.visualizerNode['classification'])
 
-        self.fc.connectTerminals(
-            self.classifierNode['classification'], self.visualizerNode['classification'])
-
-        #"""
-
-        # deliver fileSamples manually to fftNode
-        fileOutput = self.fileReaderNode.process()
-        sampleData = fileOutput['data']
-        categories = fileOutput['categories']
-        self.fftNode.setInput(samples=sampleData)
-        self.classifierNode.setInput(categories=categories)
+        self.fileReaderNode.update()
 
     def keyPressEvent(self, ev):
         if ev.key() == QtCore.Qt.Key_Escape:
