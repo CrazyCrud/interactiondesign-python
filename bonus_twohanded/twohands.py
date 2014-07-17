@@ -2,6 +2,7 @@
 
 import time
 import sys
+import math
 from pyqtgraph.flowchart import Flowchart
 import pyqtgraph
 import pyqtgraph as pg
@@ -27,14 +28,13 @@ def main():
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
                 running = False
-        time.sleep(0.05)
-
+    pygame.quit()
     sys.exit(app.exec_())
+    sys.exit()
 
 
 class Display:
     def __init__(self):
-        print 'display init'
         # initialize the pygame module
         pygame.init()
 
@@ -43,26 +43,53 @@ class Display:
 
         self.initImages()
 
-        self.pointerKeys = [('irX1', 'irY1'), ('irX2', 'irY2')]
+        self.pointerKeys = [
+            ('irX1', 'irY1'), ('irX2', 'irY2'),
+            ('irX3', 'irY3'), ('irX4', 'irY4')]
+
+        #self.pointerCombis = [('ir1', 'ir2'), ('ir3', 'ir4')]
+        self.pointerCombis = [('', ''), ('', '')]
 
     def initImages(self):
         # load and set the logo
         #logo = pygame.image.load("water.jpg")
         #pygame.display.set_icon(logo)
-        pygame.display.set_caption("minimal program")
+        pygame.display.set_caption("2HandsInteraction")
 
         self.bgd_image = pygame.image.load("backgr.jpg")
         self.screen.blit(self.bgd_image, (0, -150))
 
     def update(self, pointerValues):
         self.screen.blit(self.bgd_image, (0, -150))
+        smallestDist = 0
+        combiIndexes = [[-1, -1], [-1, -1]]
+
+        if len(pointerValues) == 0:
+            self.pointerCombis = []
+        else:
+            for i in range(4):
+                for j in range(4-i):
+                    x1 = pointerValues['irX' + i]
+                    x2 = pointerValues['irX' + j+1]
+                    y1 = pointerValues['irY' + i]
+                    y2 = pointerValues['irY' + j+1]
+
+                    a = math.abs(x1-x2)
+                    b = math.abs(y1-y2)
+
+                    dist = math.sqrt(math.pow(a, 2) + math.pow(b, 2))
+                    if smallestDist > dist:
+                        smallestDist = dist
+                        if i not in combiIndexes and j not in combiIndexes:
+                            combiIndexes.append([i, j])
 
         # check all pointer values for None
-        for posKeys in self.pointerKeys:
-                self.drawCircle(
-                    (0, 0, 255),
-                    pointerValues[posKeys[0]],
-                    pointerValues[posKeys[1]])
+        for i in range(4):
+            self.drawCircle(
+                (0, 0, 255),
+                pointerValues['irX' + i],
+                pointerValues['irY' + i])
+            #print pointerValues[posKeys[0]]
             #else:
                 #pointerValues[key] = -pointerValues[key]
                 #pointerValues[key] = pointerValues[key] / 600
@@ -93,7 +120,7 @@ class Pointer(QtGui.QWidget):
         self.configNodes()
         self.configScatterPlot()
 
-        self.getWiimote()
+        #self.getWiimote()
 
     def getWiimote(self):
         if len(sys.argv) == 1:
@@ -143,7 +170,12 @@ class Pointer(QtGui.QWidget):
     def update(self):
         self.outputValues = self.pointVisNode.outputValues()
 
-        '''
+        self.outputValues = {
+            'irX1': 200, 'irY1': 200,
+            'irX2': 300, 'irY2': 300,
+            'irX3': 500, 'irY3': 500,
+            'irX4': 600, 'irY4': 600}
+
         isX1Valid = self.outputValues['irX1'] is not None
         isY1Valid = self.outputValues['irY1'] is not None
         isX2Valid = self.outputValues['irX2'] is not None
@@ -156,7 +188,7 @@ class Pointer(QtGui.QWidget):
                     -self.outputValues['irY1']],
                     [-self.outputValues['irX2'], -self.outputValues['irY2']]],
                 size=10, pxMode=True)
-        '''
+
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
