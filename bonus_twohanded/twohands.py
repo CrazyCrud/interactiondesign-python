@@ -78,8 +78,8 @@ class Display:
 
         self.pointerIds = [x for x in range(1, pointersCount+1)]
 
-        print 'pointersCount'
-        print pointersCount
+        #print 'pointersCount'
+        #print pointersCount
         if pointersCount == 1:
             self.pinchIds = 1
         elif pointersCount >= 2:
@@ -91,21 +91,27 @@ class Display:
                 y2 = pointerValues['irY' + str(i)]
 
                 # calculate distance using pythagoras
-                a = x1-x2
-                b = y1-y2
+
+                # pseudo distance which will be overwritten or ignored
+                a = b = 100000
+
+                if x1 is not None and x2 is not None and \
+                   y1 is not None and y2 is not None:
+                    a = x1-x2
+                    b = y1-y2
 
                 self.distances.append(math.sqrt(math.pow(a, 2) + math.pow(b, 2)))
 
         nearestId = 0
         smallestDist = -1
 
-        print 'self.distances:'
-        print self.distances
+        #print 'self.distances:'
+        #print self.distances
 
         for i in range(len(self.distances)):
-            print 'get nearestId'
+            #print 'get nearestId'
             if smallestDist == -1 or smallestDist > self.distances[i]:
-                print 'if check'
+                #print 'if check'
                 smallestDist = self.distances[i]
                 # mark id of nearest pointer, adjust index by adding 2
                 nearestId = i+2
@@ -130,28 +136,28 @@ class Display:
         elif pointersCount == 2:
             if smallestDist < self.combiRadius:
                 self.combiIds = [[1, nearestId]]
-                print '2: if smallestDist < self.combiRadius:'
-                print self.combiIds
+                #print '2: if smallestDist < self.combiRadius:'
+                #print self.combiIds
             else:
                 self.pinchIds = [1, nearestId]
-                print '2: else:'
-                print self.pinchIds
+                #print '2: else:'
+                #print self.pinchIds
         elif pointersCount == 1:
             self.pinchIds = [1]
-
+        '''
         print 'combiIds:'
         print self.combiIds
         print 'pinchIds:'
         print self.pinchIds
         print 'nearestId:'
         print nearestId
-
+        '''
         radius = 9
         # check all pointer values for None
         for i in range(1, pointersCount+1):
             color = (0, 0, 0)
             if (len(self.combiIds) > 0 and i in self.combiIds[0]) or \
-               (len(self.pinchIds) > 0 and i in self.pinchIds[0]):
+               (len(self.pinchIds) > 0 and i in self.pinchIds):
                 color = self.pointerColors[0]
             else:
                 color = self.pointerColors[1]
@@ -196,9 +202,9 @@ class Pointer(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
         self.configNodes()
-        self.configScatterPlot()
+        #self.configScatterPlot()
 
-        #self.getWiimote()
+        self.getWiimote()
 
     def getWiimote(self):
         if len(sys.argv) == 1:
@@ -247,27 +253,43 @@ class Pointer(QtGui.QWidget):
     # do actions in loop
     def update(self):
         self.outputValues = self.pointVisNode.outputValues()
-
+        print 'self.outputValues'
+        print self.outputValues
+        '''
         self.outputValues = {
             'irX1': 200, 'irY1': 200,
             'irX2': 300, 'irY2': 300#,
             #'irX3': 500, 'irY3': 500#,
             #'irX4': 600, 'irY4': 600
             }
-
+        '''
+        '''
         isX1Valid = self.outputValues['irX1'] is not None
         isY1Valid = self.outputValues['irY1'] is not None
         isX2Valid = self.outputValues['irX2'] is not None
         isY2Valid = self.outputValues['irY2'] is not None
+        isX3Valid = self.outputValues['irX3'] is not None
+        isY3Valid = self.outputValues['irY3'] is not None
+        isX4Valid = self.outputValues['irX4'] is not None
+        isY4Valid = self.outputValues['irY4'] is not None
 
-        if isX1Valid and isX2Valid and isY1Valid and isY2Valid:
+        if isX1Valid and isX2Valid and \
+           isY1Valid and isY2Valid and \
+           isX3Valid and isX4Valid and \
+           isY3Valid and isY4Valid:
             self.scatter.setData(
-                pos=[[
-                    -self.outputValues['irX1'],
-                    -self.outputValues['irY1']],
-                    [-self.outputValues['irX2'], -self.outputValues['irY2']]],
+                pos=[
+                    [-self.outputValues['irX1'],
+                     -self.outputValues['irY1']],
+                    [-self.outputValues['irX2'],
+                     -self.outputValues['irY2']],
+                    [-self.outputValues['irX3'],
+                     -self.outputValues['irY3']],
+                    [-self.outputValues['irX4'],
+                     -self.outputValues['irY4']]
+                    ],
                 size=10, pxMode=True)
-
+        '''
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:

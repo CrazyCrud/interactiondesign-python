@@ -21,7 +21,7 @@ class BufferNode(CtrlNode):
     """
     nodeName = "Buffer"
     uiTemplate = [
-        ('size',  'spin', {'value': 32.0, 'step': 1.0, 'range': [0.0, 128.0]}),
+        ('size',  'spin', {'value': 20.0, 'step': 1.0, 'range': [0.0, 128.0]}),
     ]
 
     def __init__(self, name):
@@ -239,7 +239,11 @@ class Vis3DNode(Node):
             'irX1': dict(io='out'),
             'irY1': dict(io='out'),
             'irX2': dict(io='out'),
-            'irY2': dict(io='out')
+            'irY2': dict(io='out'),
+            'irX3': dict(io='out'),
+            'irY3': dict(io='out'),
+            'irX4': dict(io='out'),
+            'irY4': dict(io='out')
         }
         self._ir_vals = []
 
@@ -251,110 +255,100 @@ class Vis3DNode(Node):
     def update_ir(self, ir_vals):
         self._ir_vals = ir_vals
         self.update()
-        '''
-    def process2(self, irVals):
-        ir_id1 = -1
-        ir_id2 = -1
-        rtu_values = {}
 
-        # sort irVals by size
-        irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
-
-        for ir in irVals:
-            if ir_id1 == -1:
-                # take id of first element with the biggest size
-                ir_id1 = ir['id']
-            if ir_id2 == -1 and ir_id1 != ir['id']:
-                # take id of element with the second biggest size
-                ir_id2 = ir['id']
-            # append x/y values to list
-            if ir['id'] in rtu_values:
-                rtu_values[ir['id']]['x'].append(ir['x'])
-                rtu_values[ir['id']]['y'].append(ir['y'])
-            else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
-
-        avgX1 = 0
-        avgY1 = 0
-        avgX2 = 0
-        avgY2 = 0
-
-        # calc average x/y of the two biggest lights
-        if ir_id1 > -1 and ir_id2 > -1:
-            xVals1 = rtu_values[ir_id1]['x']
-            yVals1 = rtu_values[ir_id1]['y']
-
-            if len(xVals1) > 0:
-                avgX1 = float(sum(xVals1))/len(xVals1)
-            else:
-                avgX1 = 0
-
-            if len(yVals1) > 0:
-                avgY1 = float(sum(yVals1))/len(yVals1)
-            else:
-                avgY1 = 0
-
-            xVals2 = rtu_values[ir_id2]['x']
-            yVals2 = rtu_values[ir_id2]['y']
-
-            if len(xVals2) > 0:
-                avgX2 = float(sum(xVals2))/len(xVals2)
-            else:
-                avgX2 = 0
-
-            if len(yVals2) > 0:
-                avgY2 = float(sum(yVals2))/len(yVals2)
-            else:
-                avgY2 = 0
-
-        return {'irX1': avgX1, 'irY1': avgY1, 'irX2': avgX2, 'irY2': avgY2}
-        '''
     def process(self, irVals):
-        ir_vals_count = 4
+        #ir_vals_count = 4
         ir_ids = []
         avgVals = []
         rtu_values = {}
 
         # init id array
-        for i in range(0, ir_vals_count):
-            ir_ids.append(-1)
-            avgVals.append((0, 0))
+        #for i in range(0, ir_vals_count):
+            #ir_ids.append(-1)
+            #avgVals.append((0, 0))
 
         # sort irVals by size
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
 
-        # get ids of biggest ir values
-        for ir in irVals:
-            for i in range(0, len(ir_ids)):
-                # if this position is not already set
-                if ir_ids[i] == -1:
-                    # if id is not already set elsewhere
-                    if ir_ids[i] not in ir_ids:
-                        ir_ids[i] = ir['id']
+        #print 'irVals'
+        #print irVals
 
-            # append x/y values to list
-            if ir['id'] in rtu_values:
-                rtu_values[ir['id']]['x'].append(ir['x'])
-                rtu_values[ir['id']]['y'].append(ir['y'])
-            else:
-                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
+        try:
+            # get ids of biggest ir values
+            for ir in irVals:
+                #print 'for ir'
+                if ir['id'] not in ir_ids:
+                    ir_ids.append(ir['id'])
+                    #print 'append:'
+                    #print ir_ids
+                '''
+                for i in range(0, len(ir_ids)):
+                    #print 'for i'
+                    # if this position is not already set
+                    if ir_ids[i] == -1:
+                        #print 'is -1'
+                        # if id is not already set elsewhere
+                        nonDefaultIds = [x for x in ir_ids if x > -1]
+                        print 'nonDefaultIds'
+                        print nonDefaultIds
+                        if ir_ids[i] not in nonDefaultIds:
+                            print ir['id']
+                            ir_ids[i] = ir['id']
+                '''
+                # append x/y values to list
+                if ir['id'] in rtu_values:
+                    #print ir['id']
+                    #print rtu_values
+                    rtu_values[ir['id']]['x'].append(ir['x'])
+                    rtu_values[ir['id']]['y'].append(ir['y'])
+                else:
+                    rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
+        except:
+            print "Unexpected error:", sys.exc_info()[0]
 
-        avgsX = []
-        avgsY = []
+        #print rtu_values
+
+        avgsX = {}
+        avgsY = {}
+
+        for i in range(4):
+            avgsX[i] = None
+            avgsY[i] = None
+
+        #print 'rtu_values'
+        #print rtu_values
+
+        #print 'ir_ids'
+        #print ir_ids
 
         # calc average x/y of the two biggest lights
-        if -1 not in ir_ids:
-            for ir_id in ir_ids:
-                for i in range(0, ir_vals_count):
-                    xVals = rtu_values[ir_id]['x']
-                    yVals = rtu_values[ir_id]['y']
+        for ir_id in ir_ids:
+            #for i in range(0, ir_vals_count):
+            xVals = rtu_values[ir_id]['x']
+            yVals = rtu_values[ir_id]['y']
 
-                    if len(xVals) > 0 and len(yVals) > 0:
-                        avgsX[ir_id] = float(sum(xVals))/len(xVals)
-                        avgsY[ir_id] = float(sum(yVals))/len(yVals)
-                    else:
-                        avgsX[ir_id] = 0
-                        avgsY[ir_id] = 0
+            #print 'xVals:'
+            #print xVals
+
+            try:
+                if len(xVals) > 0 and len(yVals) > 0:
+                    avgsX[ir_id] = float(sum(xVals))/len(xVals)
+                    avgsY[ir_id] = float(sum(yVals))/len(yVals)
+                else:
+                    avgsX[ir_id] = 0
+                    avgsY[ir_id] = 0
+            except:
+                print "Unexpected error:", sys.exc_info()[0]
+        '''
+        print 'avgsX:'
+        print avgsX
+        print 'avgsX:'
+        print avgsX
+        '''
+        #print 'rtu_values'
+        #print rtu_values
+
+        #avgsX1 = avgsY1 = avgsX2 = avgsY2 = avgsX3 = avgsY3 = avgsX4 = avgsY4 = 0
 
         return {
             'irX1': avgsX[0], 'irY1': avgsY[0],
