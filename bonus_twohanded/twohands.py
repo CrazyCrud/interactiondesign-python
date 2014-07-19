@@ -43,26 +43,24 @@ class Display:
 
         self.initImages()
 
-        self.pointerKeys = [
-            ('irX1', 'irY1'), ('irX2', 'irY2'),
-            ('irX3', 'irY3'), ('irX4', 'irY4')]
-
-        #self.pointerCombis = [('ir1', 'ir2'), ('ir3', 'ir4')]
         self.pointerCombis = [('', ''), ('', '')]
 
         self.pointerColors = [(0, 0, 255), (255, 0, 0)]
 
         self.pinchIds = []
         self.combiRadius = 200
+        self.pinchRadius = 100
 
     def initImages(self):
         # load and set the logo
-        #logo = pygame.image.load("water.jpg")
-        #pygame.display.set_icon(logo)
         pygame.display.set_caption("2HandsInteraction")
 
         self.bgd_image = pygame.image.load("backgr.jpg")
         self.screen.blit(self.bgd_image, (0, -150))
+
+    def normalizeDisplayValues(self, values):
+        values = values / len(values)
+        return values * 700
 
     def update(self, pointerValues):
         self.screen.blit(self.bgd_image, (0, -150))
@@ -90,17 +88,8 @@ class Display:
                 y1 = pointerValues['irY1']
                 y2 = pointerValues['irY' + str(i)]
 
-                # calculate distance using pythagoras
-
-                # pseudo distance which will be overwritten or ignored
-                a = b = 100000
-
-                if x1 is not None and x2 is not None and \
-                   y1 is not None and y2 is not None:
-                    a = x1-x2
-                    b = y1-y2
-
-                self.distances.append(math.sqrt(math.pow(a, 2) + math.pow(b, 2)))
+                distance = self.calcDistance(x1, x2, y1, x2)
+                self.distances.append(distance)
 
         nearestId = 0
         smallestDist = -1
@@ -116,14 +105,15 @@ class Display:
                 # mark id of nearest pointer, adjust index by adding 2
                 nearestId = i+2
 
+
         if pointersCount == 4:
             #if smallestDist < combiRadius:
-            # define first combi ids
-            firstCombi = [1, nearestId]
-            # define second combi ids by selecting the remaining ids
-            secondCombi = self.getRemainingPointerIds([1, nearestId])
+                # define first combi ids
+                firstCombi = [1, nearestId]
+                # define second combi ids by selecting the remaining ids
+                secondCombi = self.getRemainingPointerIds([1, nearestId])
 
-            self.combiIds = [firstCombi, secondCombi]
+                self.combiIds = [firstCombi, secondCombi]
         elif pointersCount == 3:
             if smallestDist < self.combiRadius:
                 # define only one combi
@@ -144,6 +134,9 @@ class Display:
                 #print self.pinchIds
         elif pointersCount == 1:
             self.pinchIds = [1]
+
+
+            
         '''
         print 'combiIds:'
         print self.combiIds
@@ -152,6 +145,15 @@ class Display:
         print 'nearestId:'
         print nearestId
         '''
+
+        for key in pointerValues:
+            if pointerValues[key] is not None:
+                if 'X' in key:
+                    pointerValues[key] = (1200-pointerValues[key])
+                if 'Y' in key:
+                    pointerValues[key] = (700-pointerValues[key])
+                #print pointerValues[key]
+
         radius = 9
         # check all pointer values for None
         for i in range(1, pointersCount+1):
@@ -167,6 +169,7 @@ class Display:
             else:
                 radius = 9
 
+            #print pointerValues
             self.drawCircle(
                 color,
                 pointerValues['irX' + str(i)],
@@ -175,6 +178,19 @@ class Display:
 
             #self.drawCircle((255, 0, 0), pointerX2, pointerY2)
         pygame.display.flip()
+
+    # calculate distance between points using pythagoras
+    def calcDistance(self, x1, x2, y1, y3):
+
+        # pseudo distance which will be overwritten or ignored
+        a = b = 100000
+
+        if x1 is not None and x2 is not None and \
+           y1 is not None and y2 is not None:
+            a = x1-x2
+            b = y1-y2
+
+        return math.sqrt(math.pow(a, 2) + math.pow(b, 2))
 
     # draw circle by color, position and radius parameters
     def drawCircle(self, color, xPos, yPos, radius):

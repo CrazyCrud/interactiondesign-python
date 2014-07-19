@@ -257,21 +257,12 @@ class Vis3DNode(Node):
         self.update()
 
     def process(self, irVals):
-        #ir_vals_count = 4
         ir_ids = []
         avgVals = []
         rtu_values = {}
 
-        # init id array
-        #for i in range(0, ir_vals_count):
-            #ir_ids.append(-1)
-            #avgVals.append((0, 0))
-
         # sort irVals by size
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
-
-        #print 'irVals'
-        #print irVals
 
         try:
             # get ids of biggest ir values
