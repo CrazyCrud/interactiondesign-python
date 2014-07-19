@@ -53,7 +53,6 @@ class Display:
         self.pointerColors = [(0, 0, 255), (255, 0, 0)]
 
         self.pinchIds = []
-        self.pointerIds = [1, 2, 3, 4]
         self.combiRadius = 200
 
     def initImages(self):
@@ -75,15 +74,23 @@ class Display:
         self.pinchIds = []
         self.combiIds = []
 
-        if len(pointerValues) == 1:
+        pointersCount = len(pointerValues)/2
+
+        self.pointerIds = [x for x in range(1, pointersCount+1)]
+
+        print 'pointersCount'
+        print pointersCount
+        if pointersCount == 1:
             self.pinchIds = 1
-        elif len(pointerValues) > 2:
-            for i in range(2, (len(pointerValues)/2)):
+        elif pointersCount >= 2:
+            for i in range(2, pointersCount+1):
+                # read x/y values
                 x1 = pointerValues['irX1']
                 x2 = pointerValues['irX' + str(i)]
                 y1 = pointerValues['irY1']
                 y2 = pointerValues['irY' + str(i)]
 
+                # calculate distance using pythagoras
                 a = x1-x2
                 b = y1-y2
 
@@ -91,14 +98,19 @@ class Display:
 
         nearestId = 0
         smallestDist = -1
-        for i in range(len(self.distances)-1):
+
+        print 'self.distances:'
+        print self.distances
+
+        for i in range(len(self.distances)):
+            print 'get nearestId'
             if smallestDist == -1 or smallestDist > self.distances[i]:
+                print 'if check'
                 smallestDist = self.distances[i]
                 # mark id of nearest pointer, adjust index by adding 2
                 nearestId = i+2
 
-        idsCount = len(pointerValues)
-        if idsCount == 4:
+        if pointersCount == 4:
             #if smallestDist < combiRadius:
             # define first combi ids
             firstCombi = [1, nearestId]
@@ -106,28 +118,40 @@ class Display:
             secondCombi = self.getRemainingPointerIds([1, nearestId])
 
             self.combiIds = [firstCombi, secondCombi]
-        elif idsCount == 3:
-            if smallestDist < combiRadius:
+        elif pointersCount == 3:
+            if smallestDist < self.combiRadius:
                 # define only one combi
                 self.combiIds = [[1, nearestId]]
                 self.pinchIds = self.getRemainingPointerIds([1, nearestId])
-            elif smallestDist >= combiRadius:
+            elif smallestDist >= self.combiRadius:
                 # define only one combi
                 self.combiIds = [self.getRemainingPointerIds([1, nearestId])]
                 self.pinchIds = [1, nearestId]
-        elif idsCount == 2:
-            if smallestDist < combiRadius:
+        elif pointersCount == 2:
+            if smallestDist < self.combiRadius:
                 self.combiIds = [[1, nearestId]]
+                print '2: if smallestDist < self.combiRadius:'
+                print self.combiIds
             else:
                 self.pinchIds = [1, nearestId]
-        elif idsCount == 1:
+                print '2: else:'
+                print self.pinchIds
+        elif pointersCount == 1:
             self.pinchIds = [1]
+
+        print 'combiIds:'
+        print self.combiIds
+        print 'pinchIds:'
+        print self.pinchIds
+        print 'nearestId:'
+        print nearestId
 
         radius = 9
         # check all pointer values for None
-        for i in range(1, (len(pointerValues)/2)+1):
+        for i in range(1, pointersCount+1):
             color = (0, 0, 0)
-            if i in [1, nearestId]:
+            if (len(self.combiIds) > 0 and i in self.combiIds[0]) or \
+               (len(self.pinchIds) > 0 and i in self.pinchIds[0]):
                 color = self.pointerColors[0]
             else:
                 color = self.pointerColors[1]
@@ -142,14 +166,11 @@ class Display:
                 pointerValues['irX' + str(i)],
                 pointerValues['irY' + str(i)],
                 radius)
-            #print pointerValues[posKeys[0]]
-            #else:
-                #pointerValues[key] = -pointerValues[key]
-                #pointerValues[key] = pointerValues[key] / 600
 
             #self.drawCircle((255, 0, 0), pointerX2, pointerY2)
         pygame.display.flip()
 
+    # draw circle by color, position and radius parameters
     def drawCircle(self, color, xPos, yPos, radius):
         if xPos is not None and yPos is not None:
             pygame.draw.circle(self.screen, color, (int(xPos), int(yPos)), radius, 0)
@@ -229,8 +250,8 @@ class Pointer(QtGui.QWidget):
 
         self.outputValues = {
             'irX1': 200, 'irY1': 200,
-            'irX2': 300, 'irY2': 300,
-            'irX3': 500, 'irY3': 500#,
+            'irX2': 300, 'irY2': 300#,
+            #'irX3': 500, 'irY3': 500#,
             #'irX4': 600, 'irY4': 600
             }
 
