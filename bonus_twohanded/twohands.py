@@ -15,7 +15,8 @@ import pygame
 def main():
     app = QtGui.QApplication(sys.argv)
 
-    pointer = Pointer()
+    useWiiMote = False
+    pointer = Pointer(useWiiMote)
     display = Display()
 
     running = True
@@ -49,7 +50,8 @@ class Display:
 
         self.pinchIds = []
         self.combiRadius = 200
-        self.pinchRadius = 100
+        self.pinchRadius = 50
+
 
     def initImages(self):
         # load and set the logo
@@ -58,12 +60,24 @@ class Display:
         self.bgd_image = pygame.image.load("backgr.jpg")
         self.screen.blit(self.bgd_image, (0, -150))
 
+        self.images = {
+            0: {'obj': None, 'img': pygame.image.load("sugar.jpg"), 'posX': 200,
+                'posY': 100, 'angle': 0.0, 'scale': 1.0},
+            1: {'obj': None, 'img': pygame.image.load("water.jpg"), 'posX': 500,
+                'posY': 300, 'angle': 0.0, 'scale': 1.0},
+            2: {'obj': None, 'img': pygame.image.load("penguins.jpg"), 'posX': 800,
+                'posY': 150, 'angle': 0.0, 'scale': 1.0}
+        }
+
+        for image in self.images.values():
+            image['obj'] = ImageObject(image)
+
     def normalizeDisplayValues(self, values):
         values = values / len(values)
         return values * 700
 
-    def update(self, pointerValues):
-        self.screen.blit(self.bgd_image, (0, -150))
+
+    def updatePointers(self, pointerValues, pointersCount):
         self.smallestDistances = [100000, 100000]
         self.distances = [0, 0, 0]
         self.combiIds = [[-1, -1], [-1, -1]]
@@ -72,30 +86,58 @@ class Display:
         self.pinchIds = []
         self.combiIds = []
 
-        pointersCount = len(pointerValues)/2
-
+        # collect ids of pointers in an array
         self.pointerIds = [x for x in range(1, pointersCount+1)]
 
-        #print 'pointersCount'
-        #print pointersCount
-        if pointersCount == 1:
-            self.pinchIds = 1
-        elif pointersCount >= 2:
-            for i in range(2, pointersCount+1):
-                # read x/y values
-                x1 = pointerValues['irX1']
-                x2 = pointerValues['irX' + str(i)]
-                y1 = pointerValues['irY1']
-                y2 = pointerValues['irY' + str(i)]
+        self.checkCombis(pointerValues, pointersCount)
 
-                distance = self.calcDistance(x1, x2, y1, x2)
+        self.checkPinches(pointerValues, pointersCount)
+
+        # adjust pointer values for displaying on screen
+        for key in pointerValues:
+            if pointerValues[key] is not None:
+                if 'X' in key:
+                    pointerValues[key] = (1200-pointerValues[key])
+                if 'Y' in key:
+                    pointerValues[key] = (700-pointerValues[key])
+
+        radius = 9
+
+        # check all pointer values for None
+        for i in range(1, pointersCount+1):
+            color = (0, 0, 0)
+            if (len(self.combiIds) > 0 and i in self.combiIds[0]):
+                color = self.pointerColors[0]
+            else:
+                color = self.pointerColors[1]
+
+            if i in self.pinchIds:
+                radius = 15
+            else:
+                radius = 9
+
+            self.drawCircle(
+                color,
+                pointerValues['irX' + str(i)],
+                pointerValues['irY' + str(i)],
+                radius)
+
+
+
+    # check which combis can be created respecting the distance.
+    # check this by comparing pointer 1 with the others and respecting
+    # the count of pointers
+    def checkCombis(self, pointerValues, pointersCount):
+        if pointersCount == 1:
+            self.combiIds = [[1]]
+        elif pointersCount >= 2:
+            # check distance between pointer 1 and the others
+            for pointerId in range(2, pointersCount+1):
+                distance = self.calcDistance(pointerValues, 1, pointerId)
                 self.distances.append(distance)
 
         nearestId = 0
         smallestDist = -1
-
-        #print 'self.distances:'
-        #print self.distances
 
         for i in range(len(self.distances)):
             #print 'get nearestId'
@@ -104,7 +146,6 @@ class Display:
                 smallestDist = self.distances[i]
                 # mark id of nearest pointer, adjust index by adding 2
                 nearestId = i+2
-
 
         if pointersCount == 4:
             #if smallestDist < combiRadius:
@@ -117,70 +158,44 @@ class Display:
         elif pointersCount == 3:
             if smallestDist < self.combiRadius:
                 # define only one combi
-                self.combiIds = [[1, nearestId]]
-                self.pinchIds = self.getRemainingPointerIds([1, nearestId])
+                self.combiIds = [[1, nearestId], self.getRemainingPointerIds([1, nearestId])]
+                #self.pinchIds = self.getRemainingPointerIds([1, nearestId])
             elif smallestDist >= self.combiRadius:
                 # define only one combi
-                self.combiIds = [self.getRemainingPointerIds([1, nearestId])]
-                self.pinchIds = [1, nearestId]
+                self.combiIds = [self.getRemainingPointerIds([1])]
+                #self.pinchIds = [1, nearestId]
         elif pointersCount == 2:
-            if smallestDist < self.combiRadius:
-                self.combiIds = [[1, nearestId]]
-                #print '2: if smallestDist < self.combiRadius:'
-                #print self.combiIds
-            else:
-                self.pinchIds = [1, nearestId]
-                #print '2: else:'
-                #print self.pinchIds
+            #if smallestDist < self.combiRadius:
+            self.combiIds = [[1, nearestId]]
+            #else:
+                #self.pinchIds = [1, nearestId]
+
+    def checkPinches(self, pointerValues, pointersCount):
+        for combiId in self.combiIds:
+            distance = self.calcDistance(pointerValues, combiId[0], combiId[1])
+            # if distance is small enough combine ids to pinch
+            if distance < self.pinchRadius:
+                self.pinchIds = [combiId[0], combiId[1]]
+
+        if pointersCount == 3:
+            # interprete the one point that is not in a combination as pinch
+            self.pinchIds.append(self.getRemainingPointerIds(self.combiIds)[0])
+        elif pointersCount == 2:
+            # check if the two pointers are in combination and if not interprete them
+            # as pinch
+            uncombinedPointerIds = self.getRemainingPointerIds(self.combiIds)
+            for pointerId in uncombinedPointerIds:
+                self.pinchIds.append(pointerId)
         elif pointersCount == 1:
             self.pinchIds = [1]
 
-
-            
-        '''
-        print 'combiIds:'
-        print self.combiIds
-        print 'pinchIds:'
-        print self.pinchIds
-        print 'nearestId:'
-        print nearestId
-        '''
-
-        for key in pointerValues:
-            if pointerValues[key] is not None:
-                if 'X' in key:
-                    pointerValues[key] = (1200-pointerValues[key])
-                if 'Y' in key:
-                    pointerValues[key] = (700-pointerValues[key])
-                #print pointerValues[key]
-
-        radius = 9
-        # check all pointer values for None
-        for i in range(1, pointersCount+1):
-            color = (0, 0, 0)
-            if (len(self.combiIds) > 0 and i in self.combiIds[0]) or \
-               (len(self.pinchIds) > 0 and i in self.pinchIds):
-                color = self.pointerColors[0]
-            else:
-                color = self.pointerColors[1]
-
-            if i in self.pinchIds:
-                radius = 15
-            else:
-                radius = 9
-
-            #print pointerValues
-            self.drawCircle(
-                color,
-                pointerValues['irX' + str(i)],
-                pointerValues['irY' + str(i)],
-                radius)
-
-            #self.drawCircle((255, 0, 0), pointerX2, pointerY2)
-        pygame.display.flip()
-
     # calculate distance between points using pythagoras
-    def calcDistance(self, x1, x2, y1, y3):
+    def calcDistance(self, pointerValues, firstPointerId, secondPointerId):
+        # read x/y values
+        x1 = pointerValues['irX' + str(firstPointerId)]
+        x2 = pointerValues['irX' + str(secondPointerId)]
+        y1 = pointerValues['irY' + str(firstPointerId)]
+        y2 = pointerValues['irY' + str(secondPointerId)]
 
         # pseudo distance which will be overwritten or ignored
         a = b = 100000
@@ -190,7 +205,9 @@ class Display:
             a = x1-x2
             b = y1-y2
 
-        return math.sqrt(math.pow(a, 2) + math.pow(b, 2))
+        distance = math.sqrt(math.pow(a, 2) + math.pow(b, 2))
+
+        return distance
 
     # draw circle by color, position and radius parameters
     def drawCircle(self, color, xPos, yPos, radius):
@@ -202,9 +219,50 @@ class Display:
         return [x for x in self.pointerIds if x not in usedIds]
 
 
+    def update(self, pointerValues):
+        pointersCount = len(pointerValues)/2
+
+        self.updatePointers(pointerValues, pointersCount)
+
+        self.updateImages(pointerValues, pointersCount)
+
+        pygame.display.flip()
+
+    def updateImages(self, pointerValues, pointersCount):
+        self.screen.blit(self.bgd_image, (0, -150))
+        for image in self.images.values():
+            self.checkImgRotation(pointerValues, pointersCount, image)
+            self.checkImgPosition(pointerValues, pointersCount, image)
+            self.checkImgScale(pointerValues, pointersCount, image)
+            self.screen.blit(image['img'], (image['posX'], image['posY']))
+
+    def checkImgRotation(self, pointerValues, pointersCount, image):
+        # todo: rotate img if pinches are done over the image (compare with last pinch positions)
+        x = 1+1
+
+    def checkImgPosition(self, pointerValues, pointersCount, image):
+        # todo: move positions if pinches are done over the image (compare with last pinch positions)
+        image['posX'] = image['posX'] + 2
+        image['obj'].move()
+
+    def checkImgScale(self, pointerValues, pointersCount, image):
+        # todo: scale img if pinches are done over the image (compare with last pinch position)
+        x = 1+1
+
+class ImageObject:
+    def __init__(self, image):
+        self.pos = image['img'].get_rect().move(image['posX'], image['posY'])
+
+    def move(self):
+        self.pos = self.pos.move(0, 20)
+        if self.pos.right > 600:
+            self.pos.left = 0
+
 class Pointer(QtGui.QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, useWiiMote, parent=None):
         super(Pointer, self).__init__()
+
+        self.useWiiMote = useWiiMote
 
         self.layout = QtGui.QGridLayout()
         self.setLayout(self.layout)
@@ -218,9 +276,9 @@ class Pointer(QtGui.QWidget):
         self.layout.addWidget(self.fc.widget(), 0, 0, 2, 1)
 
         self.configNodes()
-        #self.configScatterPlot()
 
-        self.getWiimote()
+        if self.useWiiMote:
+            self.getWiimote()
 
     def getWiimote(self):
         if len(sys.argv) == 1:
@@ -269,43 +327,17 @@ class Pointer(QtGui.QWidget):
     # do actions in loop
     def update(self):
         self.outputValues = self.pointVisNode.outputValues()
-        print 'self.outputValues'
-        print self.outputValues
-        '''
-        self.outputValues = {
-            'irX1': 200, 'irY1': 200,
-            'irX2': 300, 'irY2': 300#,
-            #'irX3': 500, 'irY3': 500#,
-            #'irX4': 600, 'irY4': 600
-            }
-        '''
-        '''
-        isX1Valid = self.outputValues['irX1'] is not None
-        isY1Valid = self.outputValues['irY1'] is not None
-        isX2Valid = self.outputValues['irX2'] is not None
-        isY2Valid = self.outputValues['irY2'] is not None
-        isX3Valid = self.outputValues['irX3'] is not None
-        isY3Valid = self.outputValues['irY3'] is not None
-        isX4Valid = self.outputValues['irX4'] is not None
-        isY4Valid = self.outputValues['irY4'] is not None
+        #print 'self.outputValues'
+        #print self.outputValues
 
-        if isX1Valid and isX2Valid and \
-           isY1Valid and isY2Valid and \
-           isX3Valid and isX4Valid and \
-           isY3Valid and isY4Valid:
-            self.scatter.setData(
-                pos=[
-                    [-self.outputValues['irX1'],
-                     -self.outputValues['irY1']],
-                    [-self.outputValues['irX2'],
-                     -self.outputValues['irY2']],
-                    [-self.outputValues['irX3'],
-                     -self.outputValues['irY3']],
-                    [-self.outputValues['irX4'],
-                     -self.outputValues['irY4']]
-                    ],
-                size=10, pxMode=True)
-        '''
+        if self.useWiiMote is False:
+            self.outputValues = {
+                'irX1': 200, 'irY1': 200,
+                'irX2': 220, 'irY2': 220,
+                'irX3': 500, 'irY3': 500,
+                'irX4': 600, 'irY4': 600
+                }
+
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
@@ -317,8 +349,6 @@ class Pointer(QtGui.QWidget):
                     self.bufferNode.setBufferSize(self.buffer_amount)
 
         pyqtgraph.QtGui.QApplication.processEvents()
-
-    #def drawPoint(self):
 
 
 

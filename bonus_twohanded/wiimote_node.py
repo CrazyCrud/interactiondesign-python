@@ -264,53 +264,24 @@ class Vis3DNode(Node):
         # sort irVals by size
         irVals = sorted(irVals, key=lambda irVal: irVal['size'], reverse=True)
 
-        try:
-            # get ids of biggest ir values
-            for ir in irVals:
-                #print 'for ir'
-                if ir['id'] not in ir_ids:
-                    ir_ids.append(ir['id'])
-                    #print 'append:'
-                    #print ir_ids
-                '''
-                for i in range(0, len(ir_ids)):
-                    #print 'for i'
-                    # if this position is not already set
-                    if ir_ids[i] == -1:
-                        #print 'is -1'
-                        # if id is not already set elsewhere
-                        nonDefaultIds = [x for x in ir_ids if x > -1]
-                        print 'nonDefaultIds'
-                        print nonDefaultIds
-                        if ir_ids[i] not in nonDefaultIds:
-                            print ir['id']
-                            ir_ids[i] = ir['id']
-                '''
-                # append x/y values to list
-                if ir['id'] in rtu_values:
-                    #print ir['id']
-                    #print rtu_values
-                    rtu_values[ir['id']]['x'].append(ir['x'])
-                    rtu_values[ir['id']]['y'].append(ir['y'])
-                else:
-                    rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
-        except:
-            print "Unexpected error:", sys.exc_info()[0]
+        # get ids of biggest ir values
+        for ir in irVals:
+            if ir['id'] not in ir_ids:
+                ir_ids.append(ir['id'])
+            # append x/y values to list
+            if ir['id'] in rtu_values:
+                rtu_values[ir['id']]['x'].append(ir['x'])
+                rtu_values[ir['id']]['y'].append(ir['y'])
+            # start new list
+            else:
+                rtu_values[ir['id']] = {'x': [ir['x']], 'y': [ir['y']]}
 
-        #print rtu_values
-
+        # init avg values
         avgsX = {}
         avgsY = {}
-
         for i in range(4):
             avgsX[i] = None
             avgsY[i] = None
-
-        #print 'rtu_values'
-        #print rtu_values
-
-        #print 'ir_ids'
-        #print ir_ids
 
         # calc average x/y of the two biggest lights
         for ir_id in ir_ids:
@@ -318,28 +289,12 @@ class Vis3DNode(Node):
             xVals = rtu_values[ir_id]['x']
             yVals = rtu_values[ir_id]['y']
 
-            #print 'xVals:'
-            #print xVals
-
-            try:
-                if len(xVals) > 0 and len(yVals) > 0:
-                    avgsX[ir_id] = float(sum(xVals))/len(xVals)
-                    avgsY[ir_id] = float(sum(yVals))/len(yVals)
-                else:
-                    avgsX[ir_id] = 0
-                    avgsY[ir_id] = 0
-            except:
-                print "Unexpected error:", sys.exc_info()[0]
-        '''
-        print 'avgsX:'
-        print avgsX
-        print 'avgsX:'
-        print avgsX
-        '''
-        #print 'rtu_values'
-        #print rtu_values
-
-        #avgsX1 = avgsY1 = avgsX2 = avgsY2 = avgsX3 = avgsY3 = avgsX4 = avgsY4 = 0
+            if len(xVals) > 0 and len(yVals) > 0:
+                avgsX[ir_id] = float(sum(xVals))/len(xVals)
+                avgsY[ir_id] = float(sum(yVals))/len(yVals)
+            else:
+                avgsX[ir_id] = 0
+                avgsY[ir_id] = 0
 
         return {
             'irX1': avgsX[0], 'irY1': avgsY[0],
