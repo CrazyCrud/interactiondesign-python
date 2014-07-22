@@ -236,14 +236,14 @@ class Vis3DNode(Node):
     def __init__(self, name):
         terminals = {
             'irVals': dict(io='in'),
+            'irX0': dict(io='out'),
+            'irY0': dict(io='out'),
             'irX1': dict(io='out'),
             'irY1': dict(io='out'),
             'irX2': dict(io='out'),
             'irY2': dict(io='out'),
             'irX3': dict(io='out'),
-            'irY3': dict(io='out'),
-            'irX4': dict(io='out'),
-            'irY4': dict(io='out')
+            'irY3': dict(io='out')
         }
         self._ir_vals = []
 
@@ -297,10 +297,10 @@ class Vis3DNode(Node):
                 avgsY[ir_id] = 0
 
         return {
-            'irX1': avgsX[0], 'irY1': avgsY[0],
-            'irX2': avgsX[1], 'irY2': avgsY[1],
-            'irX3': avgsX[2], 'irY3': avgsY[2],
-            'irX4': avgsX[3], 'irY4': avgsY[3]}
+            'irX0': avgsX[0], 'irY0': avgsY[0],
+            'irX1': avgsX[1], 'irY1': avgsY[1],
+            'irX2': avgsX[2], 'irY2': avgsY[2],
+            'irX3': avgsX[3], 'irY3': avgsY[3]}
 
 fclib.registerNodeType(Vis3DNode, [('Sensor',)])
 
