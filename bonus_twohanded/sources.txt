@@ -1,5 +1,5 @@
-http://nullege.com/codes/search/pyqtgraph.ImageItem
-http://www.pyqtgraph.org/documentation/graphicsItems/imageitem.html
+http://www.pygame.org/wiki/RotateCenter?parent=CookBook
+http://mmi.capira.de/?p=102
 
 http://dr0id.homepage.bluewin.ch/pygame_tutorials.html
 
