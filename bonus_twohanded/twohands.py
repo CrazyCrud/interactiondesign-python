@@ -325,6 +325,7 @@ class ImageObject:
 
     def draw(self):
         #print 'draw: ' + str(self.rect)
+        #rect = pygame.Rect(self.rect.left, self.rect.top, 500, 500)
         self.screen.blit(self.surface, (self.rect.left, self.rect.top))
 
     def move(self, diffX, diffY):
@@ -337,24 +338,23 @@ class ImageObject:
     # src: http://www.pygame.org/wiki/RotateCenter?parent=CookBook
     def rotate(self, angleDiff):
         self.angle += angleDiff
-        #self.surface = pygame.transform.rotozoom(self.surface, angleDiff, 1.0)
-        #self.rect = self.surface.get_rect()
-        #self.rect.center = (self.pos[0] + self.size[0]/2.0, self.pos[1] + self.size[1]/2.0)
 
-        #self.surface = pygame.image.load(self.fileName).convert_alpha()
-        self.image = self.rot_center(self.image, self.angle)
-        self.surface = self.image.convert_alpha()
-        #self.surface = self.image.convert_alpha()
-        #self.surface = self.rot_center(self.surface, angleDiff)
+        oldSurfaceX = self.surface.get_width()
+        oldSurfaceY = self.surface.get_height()
 
-    def rot_center(self, image, angle):
-        """rotate an image while keeping its center and size"""
-        orig_rect = image.get_rect()
-        rot_image = pygame.transform.rotate(image, angle)
-        rot_rect = orig_rect.copy()
-        rot_rect.center = rot_image.get_rect().center
-        rot_image = rot_image.subsurface(rot_rect).copy()
-        return rot_image
+        cachedImage = pygame.transform.rotate(self.image, self.angle)
+
+        self.surface = cachedImage.convert_alpha()
+
+        newSurfaceX = self.surface.get_width()
+        newSurfaceY = self.surface.get_height()
+
+        diffSurfaceX = newSurfaceX - oldSurfaceX
+        diffSurfaceY = newSurfaceY - oldSurfaceY
+
+        self.rect = self.surface.get_rect()
+
+        self.move(self.pos[0]-diffSurfaceX/2.0, self.pos[1]-diffSurfaceY/2.0)
 
     def scaleTo(self):
         self.scale += 0.01
