@@ -21,6 +21,7 @@ def main():
     display = Display()
 
     running = True
+    # main loop
     while running:
         pointer.update()
         display.update(pointer.outputValues)
@@ -31,12 +32,19 @@ def main():
                 # change the value to False, to exit the main loop
                 running = False
         time.sleep(0.02)
+
+    # quit
     pygame.quit()
     sys.exit(app.exec_())
     sys.exit()
 
 
 class Display:
+    '''
+    This class handles drawing of images and circles,
+    interpretes all pointers' combinations, pinches,
+    gestures and handles transformations.
+    '''
     def __init__(self):
         # initialize the pygame module
         pygame.init()
@@ -61,9 +69,8 @@ class Display:
 
         self.updateCounter = 0
 
-
+    # load backgr image and image objects
     def initImages(self):
-        # load and set the logo
         pygame.display.set_caption("2HandsInteraction")
 
         self.bgd_image = pygame.image.load("backgr.jpg")
@@ -87,13 +94,7 @@ class Display:
             if 'X' in key and self.pointerVals[key] is not None:
                 self.pointersCount += 1
 
-        # adjust pointer values for displaying on screen
-        for key in self.pointerVals:
-            if self.pointerVals[key] is not None:
-                if 'X' in key:
-                    self.pointerVals[key] = (1000-self.pointerVals[key])
-                if 'Y' in key:
-                    self.pointerVals[key] = (600-self.pointerVals[key])
+        self.adjustPointerValues()
 
         self.updateImages()
 
@@ -101,6 +102,17 @@ class Display:
 
         pygame.display.flip()
 
+    # adjust pointer values for displaying on screen
+    def adjustPointerValues(self):
+        for key in self.pointerVals:
+            if self.pointerVals[key] is not None:
+                if 'X' in key:
+                    self.pointerVals[key] = (1000-self.pointerVals[key])
+                if 'Y' in key:
+                    self.pointerVals[key] = (600-self.pointerVals[key])
+
+    # read pointer values and handle actions based on those,
+    # including drawing
     def updatePointers(self):
         self.distances = []
         self.pinchIds = []
@@ -138,13 +150,10 @@ class Display:
                 self.getPointerVal('Y', i),
                 radius, i)
 
-
     # check which combis can be created respecting the distance.
     # check this by comparing pointer 1 with the others and respecting
     # the count of pointers
     def checkCombis(self):
-        #if self.pointersCount == 1:
-        #    self.combiIds = [[0]]
         if self.pointersCount >= 2:
             # check distance between pointer 1 and the others
             for pointerId in range(1, self.pointersCount):
@@ -170,13 +179,12 @@ class Display:
         elif self.pointersCount == 3:
             if smallestDist < self.combiRadius:
                 # define only one combi
-                #self.combiIds = [[0, nearestId], self.getRemainingPointerIds([0, nearestId])]
                 self.combiIds = [[0, nearestId]]
-                #self.pinchIds = self.getRemainingPointerIds([1, nearestId])
             elif smallestDist >= self.combiRadius:
                 # define only one combi
                 self.combiIds = [self.getRemainingPointerIds([1])]
 
+    # check if pointers are close enough for pinches
     def checkPinches(self):
         if self.pointersCount == 3:
             # interprete the one point that is not in a combination as pinch
@@ -193,6 +201,7 @@ class Display:
             else:
                 self.pinchIds = [self.pointerIds[0], self.pointerIds[1]]
         elif self.pointersCount == 1:
+            # only one pointer -> pinch
             self.pinchIds = [0]
 
     # calculate distance between points using pythagoras
@@ -228,11 +237,14 @@ class Display:
     def getRemainingPointerIds(self, usedIds):
         return [x for x in self.pointerIds if x not in usedIds]
 
+    # return pointer coordinate for one axis
     def getPointerVal(self, axis, pointerId):
         return self.pointerVals['ir' + axis + str(pointerId)]
 
+    # transform and draw images due to pinch gestures
     def updateImages(self):
         self.screen.blit(self.bgd_image, (0, -150))
+
         for image in self.images:
             # with two pinches enable rotation and scaling
             if len(self.pinchIds) == 2:
@@ -248,7 +260,6 @@ class Display:
                     self.calcSinglePinchDiff(self.pinchIds[0])
                     self.checkImgPosition(image, self.pinchIds[0])
             image.draw()
-            #pygame.draw.rect(self.screen, (0, 255, 255), image.rect)
 
     # check if a pinch gesture is done over an image's rectangle
     def checkPinchIsOverImg(self, image, pinchId):
@@ -260,8 +271,10 @@ class Display:
             isColliding = image.rect.collidepoint(x, y)
         return isColliding
 
+    # print helper method
     def printWithNr(self, text, nr):
-        print text + str(nr)
+        x = 1
+        #print text + str(nr)
 
     # calc difference between old and new pinch positions
     def calcMultiPinchDiff(self, pinchId1, pinchId2):
@@ -280,6 +293,7 @@ class Display:
         newPinchPosX2 = self.getPointerVal('X', pinchId2)
         newPinchPosY2 = self.getPointerVal('Y', pinchId2)
 
+        # update 'last' positions for next call
         self.lastPinchPositions[pinchId1] = (newPinchPosX1, newPinchPosY1)
         self.lastPinchPositions[pinchId2] = (newPinchPosX2, newPinchPosY2)
 
@@ -298,44 +312,40 @@ class Display:
 
         self.diffPinch = (0, 0)
 
+        # calc diff only if pointers are't out of the screen
         if lastPinchPosX != 0 and lastPinchPosY != 0 and \
            newPinchPosX < 1000 and newPinchPosY < 600:
             self.diffPinch = (lastPinchPosX - newPinchPosX, lastPinchPosY - newPinchPosY)
 
         self.lastPinchPositions[pinchId] = (newPinchPosX, newPinchPosY)
-        #print 'diffPinchX: ' + str(diffPinchX) + ' ' + str(diffPinchY)
 
+    # move image by difference
     def checkImgPosition(self, image, pinchId):
         image.move(-self.diffPinch[0], -self.diffPinch[1])
-        '''
-        for pinchId in self.pinchIds:
-            lastX = self.getPointerVal('X', pinchId)
-            lastX = self.getPointerVal('Y', pinchId)
-            self.lastPinchPositions[pinchId] = (x, y)'''
 
+    # rotate and scale image
+    # src for forms: http://mmi.capira.de/?p=102
     def checkImgRotozoom(self, image):
         # scale img if pinches are done over the image
-        scaleDiff = 1.0#!!
+        scaleDiff = 1.0
 
         topSum = (self.diffNewX**2+self.diffNewY**2)
         lowSum = (self.diffLastX**2+self.diffLastY**2)
 
+        # scale
         if lowSum > 0:
-            #scaleDiff = math.sqrt(topSum/float(lowSum))
-            self.printWithNr('scaleDiff', scaleDiff)
+            scaleDiff = math.sqrt(topSum/float(lowSum))
+            #scaleDiff = 1.0
+            #scale = image.rect.width - (image.rect.width - scaleDiff)
 
+        # rotate
         angleDiff = 0.0
         if self.diffNewX > 0:
-            #self.diffNewY = 20
-            #self.diffNewY = 30
-            #self.diffLastY = 40
-            #self.diffLastX = 50
             angleDiff = math.atan2(self.diffNewY, self.diffNewX) -\
                 math.atan2(self.diffLastY, self.diffLastX)
             angleDiff = angleDiff * 180.0 / math.pi
-            self.printWithNr('angleDiff', angleDiff)
 
-        image.rotozoom(-angleDiff, scaleDiff)
+        image.rotozoom(angleDiff, scaleDiff)
 
     def normalizeDisplayValues(self, values):
         values = values / len(values)
@@ -343,9 +353,14 @@ class Display:
 
 
 class ImageObject:
+    '''
+    This class represents the images as objects and provides
+    transformation methods for that. It also stores all
+    relevant image values.
+    '''
     def __init__(self, fileName, myId, pos, size, screen):
         self.id = myId
-        self.image = pygame.image.load(fileName)#.convert()
+        self.image = pygame.image.load(fileName)
         self.fileName = fileName
         self.surface = self.image.convert_alpha()
         self.rect = self.surface.get_rect()
@@ -357,20 +372,16 @@ class ImageObject:
         self.move(pos[0], pos[1])
 
     def draw(self):
-        #print 'draw: ' + str(self.rect)
-        #rect = pygame.Rect(self.rect.left, self.rect.top, 500, 500)
         self.screen.blit(self.surface, (self.rect.left, self.rect.top))
 
     def move(self, diffX, diffY):
-        #print 'left: ' + str(self.rect.left)
         self.rect.move_ip(diffX, diffY)
-        #print 'left2: ' + str(self.rect.left)
         self.pos = (self.rect.left, self.rect.top)
 
     # rotate and scale an image while keeping its center and size
     def rotozoom(self, angleDiff, scaleDiff):
         self.scale *= scaleDiff
-        self.angle += angleDiff
+        self.angle -= angleDiff
 
         oldSurfaceX = self.surface.get_width()
         oldSurfaceY = self.surface.get_height()
@@ -390,6 +401,7 @@ class ImageObject:
 
         self.rect = self.surface.get_rect()
 
+        # take only half
         newPosX = self.pos[0]-diffSurfaceX/2.0
         newPosY = self.pos[1]-diffSurfaceY/2.0
 
@@ -397,6 +409,10 @@ class ImageObject:
 
 
 class Pointer(QtGui.QWidget):
+    '''
+    This class reads WiiMote IR data and provides
+    them on output.
+    '''
     def __init__(self, useWiiMote, parent=None):
         super(Pointer, self).__init__()
 
@@ -468,10 +484,10 @@ class Pointer(QtGui.QWidget):
     # do actions in loop
     def update(self):
         self.outputValues = self.pointVisNode.outputValues()
-        #print 'self.outputValues'
-        #print self.outputValues
 
         if self.useWiiMote is False:
+            # use simulated data if WiiMote shall not
+            # be used
             self.outputValues = {
                 'irX0': 30, 'irY0': 120,
                 'irX1': 40, 'irY1': 130,
@@ -479,17 +495,14 @@ class Pointer(QtGui.QWidget):
                 'irX3': 410, 'irY3': 410
                 }
 
-            #'''
             self.outputCounter = self.outputCounter + 2
 
             for key in self.outputValues:
                 if 'X' in key:
-                    #self.outputValues[key] = self.outputValues[key] * math.fabs(math.sin(math.radians(self.outputCounter)))
                     self.outputValues[key] = self.outputValues[key] + self.outputCounter
                 else:
-                    #self.outputValues[key] = self.outputValues[key] * math.fabs(math.cos(math.radians(self.outputCounter)))
                     self.outputValues[key] = self.outputValues[key] + self.outputCounter
-            #'''
+
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
             if self.wiimoteNode.wiimote.buttons['Plus']:
@@ -501,7 +514,6 @@ class Pointer(QtGui.QWidget):
                     self.bufferNode.setBufferSize(self.buffer_amount)
 
         pyqtgraph.QtGui.QApplication.processEvents()
-
 
 
 if __name__ == "__main__":
