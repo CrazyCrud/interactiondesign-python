@@ -84,7 +84,6 @@ class Display:
 
     # basic loop method. parameter is the array of pointer x/y values
     def update(self, pointerValues):
-        #print pointerValues
         self.updateCounter += 1
 
         self.pointerVals = pointerValues
@@ -190,13 +189,16 @@ class Display:
             # interprete the one point that is not in a combination as pinch
             self.pinchIds.append(self.getRemainingPointerIds(self.combiIds)[0])
         elif self.pointersCount == 2:
-            distance = self.calcDistance(self.pointerIds[0], self.pointerIds[1])
+            distance = self.calcDistance(
+                self.pointerIds[0],
+                self.pointerIds[1])
             # if the two pointers are very near to another interprete
             # them as one pinch and ignore one of both pointers
             if distance < self.pinchRadius:
                 self.pinchIds = [self.pointerIds[0]]
                 self.ignoreIds = [self.pointerIds[1]]
-            # if the two pointers aren't near enough interprete them as separate
+            # if the two pointers aren't near enough interprete
+            # them as separate
             # pinches
             else:
                 self.pinchIds = [self.pointerIds[0], self.pointerIds[1]]
@@ -227,7 +229,9 @@ class Display:
     # draw circle by color, position and radius parameters
     def drawCircle(self, color, xPos, yPos, radius, nr):
         if xPos is not None and yPos is not None:
-            pygame.draw.circle(self.screen, color, (int(xPos), int(yPos)), radius, 0)
+            pygame.draw.circle(
+                self.screen, color,
+                (int(xPos), int(yPos)), radius, 0)
 
             # render text
             label = self.myfont.render(str(nr), 3, (255, 255, 255))
@@ -271,11 +275,6 @@ class Display:
             isColliding = image.rect.collidepoint(x, y)
         return isColliding
 
-    # print helper method
-    def printWithNr(self, text, nr):
-        x = 1
-        #print text + str(nr)
-
     # calc difference between old and new pinch positions
     def calcMultiPinchDiff(self, pinchId1, pinchId2):
         self.diffNewX = 0
@@ -315,7 +314,9 @@ class Display:
         # calc diff only if pointers are't out of the screen
         if lastPinchPosX != 0 and lastPinchPosY != 0 and \
            newPinchPosX < 1000 and newPinchPosY < 600:
-            self.diffPinch = (lastPinchPosX - newPinchPosX, lastPinchPosY - newPinchPosY)
+            self.diffPinch = (
+                lastPinchPosX - newPinchPosX,
+                lastPinchPosY - newPinchPosY)
 
         self.lastPinchPositions[pinchId] = (newPinchPosX, newPinchPosY)
 
@@ -335,8 +336,6 @@ class Display:
         # scale
         if lowSum > 0:
             scaleDiff = math.sqrt(topSum/float(lowSum))
-            #scaleDiff = 1.0
-            #scale = image.rect.width - (image.rect.width - scaleDiff)
 
         # rotate
         angleDiff = 0.0
@@ -499,9 +498,11 @@ class Pointer(QtGui.QWidget):
 
             for key in self.outputValues:
                 if 'X' in key:
-                    self.outputValues[key] = self.outputValues[key] + self.outputCounter
+                    self.outputValues[key] = self.outputValues[key] + \
+                        self.outputCounter
                 else:
-                    self.outputValues[key] = self.outputValues[key] + self.outputCounter
+                    self.outputValues[key] = self.outputValues[key] + \
+                        self.outputCounter
 
         # raise or lower buffer amount with +/- keys
         if self.wiimoteNode.wiimote is not None:
