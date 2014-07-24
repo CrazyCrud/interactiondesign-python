@@ -87,6 +87,14 @@ class Display:
             if 'X' in key and self.pointerVals[key] is not None:
                 self.pointersCount += 1
 
+        # adjust pointer values for displaying on screen
+        for key in self.pointerVals:
+            if self.pointerVals[key] is not None:
+                if 'X' in key:
+                    self.pointerVals[key] = (1000-self.pointerVals[key])
+                if 'Y' in key:
+                    self.pointerVals[key] = (600-self.pointerVals[key])
+
         self.updateImages()
 
         self.updatePointers()
@@ -106,21 +114,12 @@ class Display:
 
         self.checkPinches()
 
-        # adjust pointer values for displaying on screen
-        for key in self.pointerVals:
-            if self.pointerVals[key] is not None:
-                if 'X' in key:
-                    self.pointerVals[key] = (1000-self.pointerVals[key])
-                if 'Y' in key:
-                    self.pointerVals[key] = (600-self.pointerVals[key])
-
         radius = 9
 
         # check all pointer values for None
         for i in range(0, self.pointersCount):
             if i in self.ignoreIds:
                 # don't draw circle if it shall be ignored
-                print 'ignore' + str(i)
                 continue
             color = (255, 255, 255)
             if (len(self.combiIds) > 0 and i in self.combiIds[0]):
@@ -235,6 +234,7 @@ class Display:
     def updateImages(self):
         self.screen.blit(self.bgd_image, (0, -150))
         for image in self.images:
+            # with two pinches enable rotation and scaling
             if len(self.pinchIds) == 2:
                 id1 = self.pinchIds[0]
                 id2 = self.pinchIds[1]
@@ -242,11 +242,13 @@ class Display:
                    self.checkPinchIsOverImg(image, id2) is 1:
                     self.calcMultiPinchDiff(id1, id2)
                     self.checkImgRotozoom(image)
+            # with only one pinch enable only movement
             elif len(self.pinchIds) == 1:
                 if self.checkPinchIsOverImg(image, self.pinchIds[0]) is 1:
                     self.calcSinglePinchDiff(self.pinchIds[0])
                     self.checkImgPosition(image, self.pinchIds[0])
             image.draw()
+            #pygame.draw.rect(self.screen, (0, 255, 255), image.rect)
 
     # check if a pinch gesture is done over an image's rectangle
     def checkPinchIsOverImg(self, image, pinchId):
@@ -263,6 +265,11 @@ class Display:
 
     # calc difference between old and new pinch positions
     def calcMultiPinchDiff(self, pinchId1, pinchId2):
+        self.diffNewX = 0
+        self.diffNewY = 0
+        self.diffLastX = 0
+        self.diffLastY = 0
+
         lastPinchPosX1 = self.lastPinchPositions[pinchId1][0]
         lastPinchPosY1 = self.lastPinchPositions[pinchId1][1]
         lastPinchPosX2 = self.lastPinchPositions[pinchId2][0]
@@ -272,6 +279,9 @@ class Display:
         newPinchPosY1 = self.getPointerVal('Y', pinchId1)
         newPinchPosX2 = self.getPointerVal('X', pinchId2)
         newPinchPosY2 = self.getPointerVal('Y', pinchId2)
+
+        self.lastPinchPositions[pinchId1] = (newPinchPosX1, newPinchPosY1)
+        self.lastPinchPositions[pinchId2] = (newPinchPosX2, newPinchPosY2)
 
         self.diffNewX = newPinchPosX1 - newPinchPosX2
         self.diffNewY = newPinchPosY1 - newPinchPosY2
@@ -296,8 +306,7 @@ class Display:
         #print 'diffPinchX: ' + str(diffPinchX) + ' ' + str(diffPinchY)
 
     def checkImgPosition(self, image, pinchId):
-        image.move(self.diffPinch[0], self.diffPinch[1])
-
+        image.move(-self.diffPinch[0], -self.diffPinch[1])
         '''
         for pinchId in self.pinchIds:
             lastX = self.getPointerVal('X', pinchId)
@@ -306,21 +315,27 @@ class Display:
 
     def checkImgRotozoom(self, image):
         # scale img if pinches are done over the image
+        scaleDiff = 1.0#!!
+
         topSum = (self.diffNewX**2+self.diffNewY**2)
         lowSum = (self.diffLastX**2+self.diffLastY**2)
 
-        scaleDiff = 1.0
         if lowSum > 0:
+            #scaleDiff = math.sqrt(topSum/float(lowSum))
             self.printWithNr('scaleDiff', scaleDiff)
-            scaleDiff = math.sqrt(topSum/float(lowSum))
 
         angleDiff = 0.0
         if self.diffNewX > 0:
-            angleDiff = math.atan2(self.diffNewY, self.diffNewY) -\
+            #self.diffNewY = 20
+            #self.diffNewY = 30
+            #self.diffLastY = 40
+            #self.diffLastX = 50
+            angleDiff = math.atan2(self.diffNewY, self.diffNewX) -\
                 math.atan2(self.diffLastY, self.diffLastX)
+            angleDiff = angleDiff * 180.0 / math.pi
             self.printWithNr('angleDiff', angleDiff)
 
-        image.rotozoom(angleDiff, scaleDiff)
+        image.rotozoom(-angleDiff, scaleDiff)
 
     def normalizeDisplayValues(self, values):
         values = values / len(values)
